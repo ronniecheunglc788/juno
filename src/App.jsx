@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import IMessageSimulator from './components/IMessageSimulator';
 import OrbitMap from './components/OrbitMap';
+import OrbitMap2 from './components/OrbitMap2';
+import GeorgeMap from './components/GeorgeMap';
 import ImportDemos from './components/ImportDemos';
 import MomentsDemos from './components/MomentsDemos';
 import KaitlynBoard from './components/KaitlynBoard';
@@ -11,6 +13,8 @@ const VIEWS = [
   { id: 'imessage', label: 'iMessage',   sub: 'what you experience' },
   { id: 'moments',  label: 'Moments',    sub: 'magic in real life'  },
   { id: 'orbit',    label: 'Orbit Map',  sub: 'what Breeze sees'    },
+  { id: 'orbit2',   label: 'Orbit 2',   sub: 'Samuel Arosti'       },
+  { id: 'george',   label: 'George',    sub: 'BU Biomedical Eng'   },
   { id: 'import',   label: 'Import',     sub: 'where it goes'       },
   { id: 'kaitlyn',  label: 'Kaitlyn',    sub: 'designer\'s board'   },
   { id: 'context',  label: 'Upload',     sub: 'build your context'  },
@@ -18,7 +22,7 @@ const VIEWS = [
 
 export default function App() {
   const [activeView, setActiveView] = useState('imessage');
-  const isOrbit = activeView === 'orbit';
+  const isOrbit = activeView === 'orbit' || activeView === 'orbit2' || activeView === 'george';
   const isMoments = activeView === 'moments';
   const isKaitlyn = activeView === 'kaitlyn';
 
@@ -95,6 +99,8 @@ export default function App() {
         {activeView === 'imessage' && <IMessageSimulator key="imessage" />}
         {activeView === 'moments'  && <MomentsDemos      key="moments"  />}
         {activeView === 'orbit'    && <OrbitMap           key="orbit"    />}
+        {activeView === 'orbit2'   && <OrbitMap2          key="orbit2"   />}
+        {activeView === 'george'   && <GeorgeMap          key="george"   />}
         {activeView === 'import'   && <ImportDemos        key="import"   />}
         {activeView === 'kaitlyn'  && <KaitlynBoard       key="kaitlyn"  />}
         {activeView === 'context'  && <ContextBuilder     key="context"  />}
