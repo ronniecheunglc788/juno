@@ -16,7 +16,8 @@ export default function Board() {
   useEffect(() => {
     const saved = localStorage.getItem('breeze_user');
     if (!saved) { navigate('/join'); return; }
-    const u = JSON.parse(saved);
+    let u;
+    try { u = JSON.parse(saved); } catch { localStorage.removeItem('breeze_user'); navigate('/join'); return; }
     setUser(u);
 
     fetch(`/api/board-data?userId=${u.id}&entityId=${u.entity_id}`)

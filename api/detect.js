@@ -1,5 +1,6 @@
 import { composio } from './_lib/composio.js';
 import { supabase } from './_lib/supabase.js';
+import { validateUUID, validateString, setCORSHeaders, internalError } from './_lib/validate.js';
 
 // ── Keyword sets for each archetype ──────────────────────────────────────────
 const SIGNALS = {
@@ -60,68 +61,80 @@ function detectArchetype(signals) {
   return winner[1] > 0 ? winner[0] : 'senior';
 }
 
+const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
+
 // ── Main handler ─────────────────────────────────────────────────────────────
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  setCORSHeaders(req, res);
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const { entityId, userId } = req.body;
-  if (!entityId || !userId) return res.status(400).json({ error: 'entityId and userId required' });
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const { entityId, userId } = req.body || {};
+
+  const userIdErr = validateUUID(userId, 'userId');
+  const entityErr = validateString(entityId, 'entityId', { maxLength: 200 });
+  if (userIdErr) return res.status(400).json({ error: userIdErr });
+  if (entityErr) return res.status(400).json({ error: entityErr });
 
   try {
-    const entity = await composio.getEntity(entityId);
+    // Check if we already have fresh cached data from a recent board load
+    const { data: user } = await supabase
+      .from('users')
+      .select('emails_cache, calendar_cache, notion_cache, connected_apps, data_fetched_at')
+      .eq('id', userId)
+      .single();
 
-    // Collect text signals from connected apps
+    const hasFreshCache = user?.data_fetched_at &&
+      Date.now() - new Date(user.data_fetched_at).getTime() < CACHE_TTL_MS;
+
     const signals = [];
 
-    // Which apps are connected — add as explicit signals
-    const connections = await entity.getConnections();
-    for (const conn of connections) {
-      signals.push(`__app:${conn.appName?.toLowerCase()}`);
+    if (hasFreshCache) {
+      // Use cached data — no Composio calls needed
+      (user.connected_apps || []).forEach(app => signals.push(`__app:${app}`));
+      (user.emails_cache   || []).forEach(e => { if (e.subject) signals.push(e.subject); });
+      (user.calendar_cache || []).forEach(e => { if (e.title)   signals.push(e.title);   });
+      (user.notion_cache   || []).forEach(p => { if (p.title)   signals.push(p.title);   });
+    } else {
+      // No cache — fetch from Composio
+      const entity = await composio.getEntity(entityId);
+
+      const connections = await entity.getConnections();
+      connections.forEach(conn => signals.push(`__app:${conn.appName?.toLowerCase()}`));
+
+      await Promise.allSettled([
+        entity.execute({ actionName: 'GMAIL_FETCH_EMAILS', params: { max_results: 30 } })
+          .then(r => {
+            const emails = r?.data?.messages || [];
+            emails.forEach(e => { if (e.subject) signals.push(e.subject); });
+          }).catch(err => console.error('[detect] gmail error', err)),
+
+        entity.execute({ actionName: 'GOOGLECALENDAR_EVENTS_LIST', params: { calendarId: 'primary', maxResults: 30 } })
+          .then(r => {
+            const events = r?.data?.items || [];
+            events.forEach(e => { if (e.summary) signals.push(e.summary); });
+          }).catch(err => console.error('[detect] calendar error', err)),
+
+        entity.execute({ actionName: 'NOTION_SEARCH_NOTION_PAGE', params: { query: '' } })
+          .then(r => {
+            const pages = r?.data?.results || [];
+            pages.forEach(p => {
+              const title = p.properties?.title?.title?.[0]?.plain_text;
+              if (title) signals.push(title);
+            });
+          }).catch(err => console.error('[detect] notion error', err)),
+      ]);
     }
-
-    // Fetch Gmail subjects (last 30 emails)
-    try {
-      const gmailResult = await entity.execute({
-        actionName: 'GMAIL_FETCH_EMAILS',
-        params: { max_results: 30 },
-      });
-      const emails = gmailResult?.data?.messages || gmailResult?.response_data?.messages || [];
-      emails.forEach(e => { if (e.subject) signals.push(e.subject); });
-    } catch (_) {}
-
-    // Fetch Calendar event titles (next 30 events)
-    try {
-      const calResult = await entity.execute({
-        actionName: 'GOOGLECALENDAR_LIST_EVENTS',
-        params: { max_results: 30 },
-      });
-      const events = calResult?.data?.items || calResult?.response_data?.items || [];
-      events.forEach(e => { if (e.summary) signals.push(e.summary); });
-    } catch (_) {}
-
-    // Fetch Notion page titles
-    try {
-      const notionResult = await entity.execute({
-        actionName: 'NOTION_SEARCH_PAGES',
-        params: { query: '' },
-      });
-      const pages = notionResult?.data?.results || notionResult?.response_data?.results || [];
-      pages.forEach(p => {
-        const title = p.properties?.title?.title?.[0]?.plain_text;
-        if (title) signals.push(title);
-      });
-    } catch (_) {}
 
     const archetype = detectArchetype(signals);
 
-    // Save archetype to Supabase
-    await supabase.from('users').update({ archetype }).eq('id', userId);
+    const { error: updateErr } = await supabase
+      .from('users').update({ archetype }).eq('id', userId);
+    if (updateErr) console.error('[detect] archetype save error', updateErr);
 
-    return res.status(200).json({ archetype, signals_used: signals.length });
+    return res.status(200).json({ archetype, signals_used: signals.length, fromCache: hasFreshCache });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return internalError(res, err, 'Failed to detect archetype');
   }
 }

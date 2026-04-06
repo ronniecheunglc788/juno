@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
-import { userData } from '../data/userData';
+import { userData as defaultUserData } from '../data/userData';
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 const C = {
@@ -93,7 +93,8 @@ function makeRingCurve(radius, tilt, segments = 128) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function OrbitMap() {
+export default function OrbitMap({ user: userProp }) {
+  const userData = userProp || defaultUserData;
   const mountRef      = useRef(null);
   const threeRef      = useRef({});
   const nodeDataRef   = useRef([]);
@@ -620,8 +621,8 @@ export default function OrbitMap() {
 
       {/* ── Filter pills ────────────────────────────────────────────────── */}
       <div style={{
-        position: 'absolute', top: 72, left: '50%', transform: 'translateX(-50%)',
-        display: 'flex', gap: 7, zIndex: 50,
+        position: 'absolute', top: 62, left: '50%', transform: 'translateX(-50%)',
+        display: 'flex', gap: 6, zIndex: 50,
       }}>
         {FILTERS.map(f => {
           const active = activeFilter === f.id;
@@ -644,16 +645,16 @@ export default function OrbitMap() {
             >
               {f.dot && (
                 <span style={{
-                  width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
-                  background: f.dot, boxShadow: `0 0 5px ${f.dot}`,
+                  width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
+                  background: f.dot,
                   display: 'inline-block',
                 }} />
               )}
-              <span style={{ color: active ? '#fff' : '#888', fontSize: 12, fontWeight: active ? 600 : 400 }}>{f.label}</span>
+              <span style={{ color: active ? '#e8e8e8' : '#777', fontSize: 12, fontWeight: active ? 600 : 400 }}>{f.label}</span>
               <span style={{
-                background: active ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)',
-                borderRadius: 10, padding: '1px 6px',
-                fontSize: 10, color: active ? '#ccc' : '#555', fontWeight: 600,
+                background: 'rgba(255,255,255,0.07)',
+                borderRadius: 8, padding: '1px 5px',
+                fontSize: 10, color: active ? '#bbb' : '#444', fontWeight: 600,
               }}>{count}</span>
             </button>
           );
@@ -665,7 +666,7 @@ export default function OrbitMap() {
         <button
           onClick={() => { setUrgentOpen(true); setSelected(null); }}
           style={{
-            position: 'absolute', top: 72, right: 26,
+            position: 'absolute', top: 62, right: 26,
             background: 'rgba(240,128,96,0.12)',
             border: '1px solid rgba(240,128,96,0.35)',
             borderRadius: 22, padding: '8px 16px',
@@ -782,7 +783,7 @@ export default function OrbitMap() {
             transition: 'all 0.2s',
           }}
         >
-          <span style={{ fontSize: 12, color: '#aaa', fontWeight: 500 }}>↺ Reset view</span>
+          <span style={{ fontSize: 12, color: '#aaa', fontWeight: 500 }}>Reset view</span>
         </button>
 
         {/* Auto-rotate toggle */}
@@ -798,7 +799,7 @@ export default function OrbitMap() {
           }}
         >
           <span style={{ fontSize: 12, color: autoRotate ? CSS.gold : '#888', fontWeight: autoRotate ? 600 : 400 }}>
-            {autoRotate ? '⟳ rotating' : '⏸ paused'}
+            {autoRotate ? 'Rotating' : 'Paused'}
           </span>
         </button>
       </div>
@@ -807,27 +808,17 @@ export default function OrbitMap() {
       {!hinted && (
         <div style={{
           position: 'absolute', bottom: 100, right: 32,
-          background: 'rgba(201,168,76,0.07)', border: '1px solid rgba(201,168,76,0.25)',
-          borderRadius: 10, padding: '9px 18px', pointerEvents: 'none',
+          background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: 8, padding: '8px 16px', pointerEvents: 'none',
+          backdropFilter: 'blur(12px)',
         }}>
-          <div style={{ color: CSS.gold, fontSize: 13, fontWeight: 600 }}>✦ Drag to rotate · scroll to zoom · click to explore</div>
+          <div style={{ color: '#888', fontSize: 12 }}>Drag to rotate · scroll to zoom · click to explore</div>
         </div>
       )}
 
-      {/* ── Branding ────────────────────────────────────────────────────── */}
-      <div style={{ position: 'absolute', top: 22, left: 26, display: 'flex', alignItems: 'center', gap: 9 }}>
-        <div style={{
-          width: 30, height: 30, borderRadius: '50%',
-          background: 'linear-gradient(135deg,#C9A84C,#3C3489)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 13, fontWeight: 800, boxShadow: '0 0 14px rgba(201,168,76,0.3)',
-        }}>B</div>
-        <span style={{ color: CSS.gold, fontWeight: 800, fontSize: 16, letterSpacing: '1px' }}>BREEZE</span>
-      </div>
-
       {/* ── User label ──────────────────────────────────────────────────── */}
       <div style={{
-        position: 'absolute', top: 22,
+        position: 'absolute', top: 62,
         right: (selected || urgentOpen) ? 372 : 28,
         textAlign: 'right', transition: 'right 0.35s ease', pointerEvents: 'none',
       }}>
@@ -868,7 +859,7 @@ export default function OrbitMap() {
           ['drifting',       CSS.red],
         ].map(([label, color]) => (
           <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, boxShadow: `0 0 6px ${color}`, flexShrink: 0 }} />
+            <div style={{ width: 7, height: 7, borderRadius: '50%', background: color, flexShrink: 0 }} />
             <span style={{ color: '#777', fontSize: 12, fontWeight: 500 }}>{label}</span>
           </div>
         ))}
@@ -1000,9 +991,9 @@ function DetailPanel({ entity, onClose }) {
           border: '1px solid rgba(255,255,255,0.08)', borderRadius: 7, padding: '5px 12px',
           fontSize: 12, color: '#666', fontWeight: 500,
         }}>
-          {entity.orbit_ring === 1 ? '⚡ Inner orbit — strong signal'
-           : entity.orbit_ring === 2 ? '◎ Middle orbit — moderate'
-           : '🌒 Outer orbit — fading'}
+          {entity.orbit_ring === 1 ? 'Inner orbit — strong signal'
+           : entity.orbit_ring === 2 ? 'Middle orbit — moderate'
+           : 'Outer orbit — fading'}
         </span>
       </div>
     </div>
