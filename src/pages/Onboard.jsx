@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const APPS = [
   { id: 'gmail',          label: 'Gmail',           required: true  },
@@ -22,31 +22,33 @@ const APPS = [
 ];
 
 const S = {
-  page:     { width: '100vw', minHeight: '100vh', background: '#F7F5F0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Inter', sans-serif", padding: '40px 20px', boxSizing: 'border-box' },
-  card:     { width: 460, background: '#fff', border: '1px solid #E8E2D9', borderRadius: 16, padding: '44px 40px', boxShadow: '0 2px 24px rgba(0,0,0,0.06)' },
-  logo:     { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 32 },
-  logoBall: { width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#C9A84C,#8B6914)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: '#fff' },
-  logoText: { color: '#8B6914', fontWeight: 700, fontSize: 14, letterSpacing: '2px' },
-  h1:       { color: '#111', fontSize: 22, fontWeight: 700, margin: '0 0 6px', letterSpacing: '-0.3px' },
-  sub:      { color: '#888', fontSize: 14, margin: '0 0 24px', lineHeight: 1.6 },
-  label:    { color: '#555', fontSize: 12, fontWeight: 600, marginBottom: 6, display: 'block' },
-  input:    { width: '100%', background: '#FAFAF9', border: '1px solid #E0DAD0', borderRadius: 8, padding: '11px 14px', color: '#111', fontSize: 14, marginBottom: 12, boxSizing: 'border-box', outline: 'none', fontFamily: "'Inter', sans-serif" },
-  btn:      { width: '100%', background: '#1A1208', border: 'none', borderRadius: 8, padding: '13px', color: '#fff', fontWeight: 600, fontSize: 14, cursor: 'pointer', marginTop: 8, fontFamily: "'Inter', sans-serif" },
-  btnGhost: { width: '100%', background: 'transparent', border: '1px solid #E0DAD0', borderRadius: 8, padding: '12px', color: '#888', fontWeight: 500, fontSize: 14, cursor: 'pointer', marginTop: 8, fontFamily: "'Inter', sans-serif" },
-  divider:  { borderTop: '1px solid #F0EBE3', margin: '20px 0' },
-  appScroll:{ maxHeight: 280, overflowY: 'auto', margin: '0 -4px', padding: '0 4px' },
-  appRow:   { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 0', borderBottom: '1px solid #F5F0EB' },
-  appLabel: { color: '#222', fontSize: 14, fontWeight: 500 },
-  appReq:   { color: '#bbb', fontSize: 11, marginTop: 2 },
-  connBtn:  { background: '#FAFAF9', border: '1px solid #E0DAD0', borderRadius: 6, padding: '4px 12px', color: '#555', fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0 },
-  connDone: { background: 'transparent', border: '1px solid #C6E8C8', borderRadius: 6, padding: '4px 12px', color: '#2D7F33', fontSize: 12, fontWeight: 600, cursor: 'default', flexShrink: 0 },
-  error:    { color: '#C0392B', fontSize: 13, marginTop: 4, padding: '8px 12px', background: 'rgba(192,57,43,0.05)', borderRadius: 6 },
-  foot:     { marginTop: 20, textAlign: 'center', fontSize: 13, color: '#aaa' },
-  link:     { color: '#8B6914', textDecoration: 'none', fontWeight: 600 },
+  page:     { width: '100vw', minHeight: '100vh', background: '#09090F', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'system-ui,-apple-system,sans-serif', padding: '40px 20px', boxSizing: 'border-box' },
+  card:     { width: 420, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '40px 36px', boxShadow: '0 24px 64px rgba(0,0,0,0.4)' },
+  wordmark: { fontSize: 12, fontWeight: 400, letterSpacing: '6px', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', marginBottom: 36, userSelect: 'none' },
+  h1:       { color: 'rgba(255,255,255,0.88)', fontSize: 20, fontWeight: 500, margin: '0 0 8px', letterSpacing: '-0.3px' },
+  sub:      { color: 'rgba(255,255,255,0.3)', fontSize: 13, margin: '0 0 28px', lineHeight: 1.65 },
+  label:    { color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 500, letterSpacing: '0.5px', marginBottom: 7, display: 'block', textTransform: 'uppercase' },
+  input:    { width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '11px 14px', color: 'rgba(255,255,255,0.85)', fontSize: 14, marginBottom: 14, boxSizing: 'border-box', outline: 'none', fontFamily: 'system-ui,-apple-system,sans-serif' },
+  btn:      { width: '100%', background: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: 8, padding: '12px', color: '#09090F', fontWeight: 600, fontSize: 14, cursor: 'pointer', marginTop: 8, fontFamily: 'system-ui,-apple-system,sans-serif', transition: 'opacity 0.15s' },
+  btnGhost: { width: '100%', background: 'transparent', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '11px', color: 'rgba(255,255,255,0.35)', fontWeight: 400, fontSize: 13, cursor: 'pointer', marginTop: 8, fontFamily: 'system-ui,-apple-system,sans-serif' },
+  divider:  { borderTop: '1px solid rgba(255,255,255,0.06)', margin: '20px 0' },
+  appScroll:{ maxHeight: 300, overflowY: 'auto', margin: '0 -4px', padding: '0 4px' },
+  appRow:   { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' },
+  appLabel: { color: 'rgba(255,255,255,0.75)', fontSize: 13, fontWeight: 400 },
+  appReq:   { color: 'rgba(255,255,255,0.22)', fontSize: 11, marginTop: 2 },
+  connBtn:  { background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '4px 12px', color: 'rgba(255,255,255,0.55)', fontSize: 12, fontWeight: 500, cursor: 'pointer', flexShrink: 0 },
+  connDone: { background: 'transparent', border: '1px solid rgba(80,200,100,0.3)', borderRadius: 6, padding: '4px 12px', color: 'rgba(80,200,100,0.8)', fontSize: 12, fontWeight: 500, cursor: 'default', flexShrink: 0 },
+  error:    { color: 'rgba(240,80,80,0.9)', fontSize: 12, marginTop: 8, padding: '8px 12px', background: 'rgba(240,80,80,0.07)', borderRadius: 6, border: '1px solid rgba(240,80,80,0.12)' },
+  foot:     { marginTop: 20, textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.2)' },
+  link:     { color: 'rgba(255,255,255,0.45)', textDecoration: 'none' },
+  hint:     { fontSize: 12, color: 'rgba(255,200,80,0.7)', background: 'rgba(255,200,80,0.06)', border: '1px solid rgba(255,200,80,0.12)', borderRadius: 6, padding: '8px 12px', marginBottom: 12, lineHeight: 1.5 },
 };
 
 export default function Onboard() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isManage = searchParams.get('manage') === 'true';
+
   const [step, setStep] = useState(1);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -60,10 +62,12 @@ export default function Onboard() {
     if (saved) {
       try {
         const u = JSON.parse(saved);
+        // If managing connections, go straight to step 2
+        if (isManage) { setUser(u); setStep(2); return; }
         if (u.archetype) navigate('/board');
       } catch { localStorage.removeItem('breeze_user'); }
     }
-  }, [navigate]);
+  }, [navigate, isManage]);
 
   useEffect(() => {
     if (step !== 2 || !user) return;
@@ -86,8 +90,7 @@ export default function Onboard() {
   async function handleSignup(e) {
     e.preventDefault();
     if (!name.trim() || !email.trim()) return setError('Both fields required');
-    setLoading(true);
-    setError('');
+    setLoading(true); setError('');
     try {
       const res = await fetch('/api/user', {
         method: 'POST',
@@ -97,32 +100,19 @@ export default function Onboard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       localStorage.setItem('breeze_user', JSON.stringify(data));
-      setUser(data);
-      setStep(2);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+      setUser(data); setStep(2);
+    } catch (err) { setError(err.message); }
+    finally { setLoading(false); }
   }
 
   async function handleConnect(appId) {
-    // Open window synchronously (on the user gesture) to avoid popup blockers,
-    // then navigate it once we have the redirect URL.
     const win = window.open('', '_blank');
     try {
       const res = await fetch(`/api/connect?entityId=${user.entity_id}&app=${appId}`);
       const data = await res.json();
-      if (data.redirectUrl) {
-        win.location.href = data.redirectUrl;
-      } else {
-        win.close();
-        setError(data.error || 'Could not get connection URL');
-      }
-    } catch (err) {
-      win.close();
-      setError('Could not start connection: ' + err.message);
-    }
+      if (data.redirectUrl) { win.location.href = data.redirectUrl; }
+      else { win.close(); setError(data.error || 'Could not get connection URL'); }
+    } catch (err) { win.close(); setError('Could not start connection: ' + err.message); }
   }
 
   async function handleDetect() {
@@ -139,22 +129,18 @@ export default function Onboard() {
       const updated = { ...user, archetype: data.archetype };
       localStorage.setItem('breeze_user', JSON.stringify(updated));
       navigate('/board');
-    } catch (err) {
-      setError(err.message);
-      setStep(2);
-    }
+    } catch (err) { setError(err.message); setStep(2); }
   }
 
-  const requiredConnected = APPS.filter(a => a.required).every(a => connected[a.id]);
+  const requiredApps = APPS.filter(a => a.required);
+  const missingRequired = requiredApps.filter(a => !connected[a.id]);
+  const requiredConnected = missingRequired.length === 0;
   const connectedCount = Object.keys(connected).length;
 
   return (
     <div style={S.page}>
       <div style={S.card}>
-        <div style={S.logo}>
-          <div style={S.logoBall}>B</div>
-          <span style={S.logoText}>BREEZE</span>
-        </div>
+        <div style={S.wordmark}>breeze</div>
 
         {/* Step 1 — Signup */}
         {step === 1 && (
@@ -162,15 +148,15 @@ export default function Onboard() {
             <h1 style={S.h1}>Set up your board</h1>
             <p style={S.sub}>Connect your apps and Breeze builds a personalized view of your life — no prompting required.</p>
             <form onSubmit={handleSignup}>
-              <label style={S.label}>Your name</label>
+              <label style={S.label}>Name</label>
               <input style={S.input} value={name} onChange={e => setName(e.target.value)} placeholder="First name" autoFocus />
               <label style={S.label}>Email</label>
               <input style={S.input} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@school.edu" />
               {error && <div style={S.error}>{error}</div>}
-              <button style={S.btn} type="submit" disabled={loading}>{loading ? 'Setting up…' : 'Continue →'}</button>
+              <button style={S.btn} type="submit" disabled={loading}>{loading ? 'Setting up…' : 'Continue'}</button>
             </form>
             <div style={S.foot}>
-              Already set up? <Link to="/login" style={S.link}>Log in</Link>
+              Already set up? <a href="/login" style={S.link}>Log in</a>
             </div>
           </>
         )}
@@ -178,24 +164,25 @@ export default function Onboard() {
         {/* Step 2 — Connect apps */}
         {step === 2 && (
           <>
-            <h1 style={S.h1}>Connect your apps</h1>
-            <p style={S.sub}>Breeze reads your data to figure out who you are and what you need. Nothing is stored — it just informs your board.</p>
+            <h1 style={S.h1}>{isManage ? 'Manage connections' : 'Connect your apps'}</h1>
+            <p style={S.sub}>Breeze reads your data to understand what you need. Connect more apps for a richer board.</p>
 
             {connectedCount > 0 && (
-              <div style={{ fontSize: 12, color: '#16A34A', fontWeight: 600, marginBottom: 12 }}>
+              <div style={{ fontSize: 12, color: 'rgba(80,200,100,0.7)', marginBottom: 14 }}>
                 {connectedCount} app{connectedCount !== 1 ? 's' : ''} connected
               </div>
             )}
 
-            <div style={S.divider} />
-
-            {/* Scrollable app list */}
             <div style={S.appScroll}>
               {APPS.map(app => (
                 <div key={app.id} style={S.appRow}>
                   <div>
-                    <div style={S.appLabel}>{app.label}</div>
-                    <div style={S.appReq}>{app.required ? 'Required' : 'Optional'}</div>
+                    <div style={S.appLabel}>
+                      {app.label}
+                      {app.required && (
+                        <span style={{ marginLeft: 6, fontSize: 10, color: 'rgba(255,200,80,0.6)', fontWeight: 500 }}>required</span>
+                      )}
+                    </div>
                   </div>
                   {connected[app.id]
                     ? <div style={S.connDone}>✓ Connected</div>
@@ -206,17 +193,26 @@ export default function Onboard() {
             </div>
 
             <div style={S.divider} />
+
+            {!requiredConnected && (
+              <div style={S.hint}>
+                Connect <strong style={{ color: 'rgba(255,200,80,0.9)' }}>{missingRequired.map(a => a.label).join(' + ')}</strong> to build your board — they're used to detect your archetype.
+              </div>
+            )}
+
             {error && <div style={{ ...S.error, marginBottom: 12 }}>{error}</div>}
+
             <button
-              style={{ ...S.btn, opacity: requiredConnected ? 1 : 0.5 }}
-              onClick={handleDetect}
-              disabled={!requiredConnected}
+              style={{ ...S.btn, opacity: requiredConnected ? 1 : 0.35, cursor: requiredConnected ? 'pointer' : 'not-allowed' }}
+              onClick={requiredConnected ? handleDetect : undefined}
             >
-              Build my board →
+              {isManage ? 'Done' : 'Build my board'}
             </button>
-            <button style={S.btnGhost} onClick={handleDetect}>
-              Skip — use what's connected
-            </button>
+            {!isManage && (
+              <button style={S.btnGhost} onClick={handleDetect}>
+                Skip — use what's connected
+              </button>
+            )}
           </>
         )}
 
@@ -224,11 +220,11 @@ export default function Onboard() {
         {step === 3 && (
           <>
             <h1 style={S.h1}>Building your board…</h1>
-            <p style={S.sub}>Breeze is scanning your apps to figure out the right board for you. Takes about 10 seconds.</p>
-            <div style={{ marginTop: 28, display: 'flex', alignItems: 'center', gap: 10, color: '#8B6914', fontSize: 14 }}>
+            <p style={S.sub}>Scanning your connected apps to find the right board for you.</p>
+            <div style={{ marginTop: 28, fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>
               {error
-                ? <span style={{ color: '#C0392B' }}>{error}</span>
-                : <><span style={{ fontSize: 18 }}>◌</span> Analyzing your connected apps…</>
+                ? <span style={{ color: 'rgba(240,80,80,0.9)' }}>{error}</span>
+                : 'Analyzing your apps…'
               }
             </div>
           </>

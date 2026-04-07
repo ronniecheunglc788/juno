@@ -33,26 +33,26 @@ function UserNav({ user, onLogout }) {
 
   return (
     <div style={{
-      height:          48,
+      height:          44,
       flexShrink:      0,
       display:         'flex',
       alignItems:      'center',
       justifyContent:  'space-between',
-      padding:         '0 24px',
-      borderBottom:    '1px solid rgba(255,255,255,0.05)',
-      background:      'rgba(5,8,15,0.96)',
-      backdropFilter:  'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)',
+      padding:         '0 20px',
+      borderBottom:    '1px solid rgba(255,255,255,0.04)',
+      background:      'rgba(4,6,12,0.98)',
+      backdropFilter:  'blur(24px)',
+      WebkitBackdropFilter: 'blur(24px)',
       zIndex:          50,
       position:        'relative',
     }}>
 
       {/* Wordmark */}
       <div style={{
-        fontSize:      13,
-        fontWeight:    300,
+        fontSize:      11,
+        fontWeight:    400,
         letterSpacing: '5px',
-        color:         'rgba(255,255,255,0.8)',
+        color:         'rgba(255,255,255,0.22)',
         textTransform: 'uppercase',
         fontFamily:    'system-ui,-apple-system,sans-serif',
         userSelect:    'none',
@@ -60,91 +60,87 @@ function UserNav({ user, onLogout }) {
         breeze
       </div>
 
-      {/* User identity */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, position: 'relative' }}>
-        {/* Archetype badge */}
+      {/* Right side */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}>
+        {/* Archetype pill */}
         <div style={{
           fontSize:      10,
           fontWeight:    500,
-          letterSpacing: '0.8px',
+          letterSpacing: '0.6px',
           textTransform: 'uppercase',
-          color:         color,
-          background:    `${color}14`,
-          border:        `1px solid ${color}28`,
-          borderRadius:  5,
-          padding:       '3px 9px',
+          color:         `${color}cc`,
+          padding:       '2px 8px',
           fontFamily:    'system-ui,-apple-system,sans-serif',
         }}>
           {label}
         </div>
 
-        {/* Name */}
-        <div style={{
-          fontSize:   13,
-          color:      'rgba(255,255,255,0.55)',
-          fontFamily: 'system-ui,-apple-system,sans-serif',
-          fontWeight: 400,
-        }}>
-          {user?.name?.split(' ')[0] || ''}
-        </div>
+        {/* Divider */}
+        <div style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.08)' }} />
 
-        {/* Avatar — click to open menu */}
+        {/* Avatar button */}
         <div
           onClick={() => setMenuOpen(o => !o)}
           style={{
-            width:        30,
-            height:       30,
-            borderRadius: '50%',
-            background:   `${color}22`,
-            border:       `1px solid ${color}44`,
-            display:      'flex',
-            alignItems:   'center',
-            justifyContent:'center',
-            fontSize:     11,
-            fontWeight:   600,
-            color:        color,
-            fontFamily:   'system-ui,-apple-system,sans-serif',
-            letterSpacing:'0.5px',
-            userSelect:   'none',
-            flexShrink:   0,
-            cursor:       'pointer',
+            display:        'flex',
+            alignItems:     'center',
+            gap:            7,
+            padding:        '4px 8px 4px 4px',
+            borderRadius:   20,
+            cursor:         'pointer',
+            background:     menuOpen ? 'rgba(255,255,255,0.05)' : 'transparent',
+            transition:     'background 0.15s',
+            userSelect:     'none',
           }}
         >
-          {initials}
+          <div style={{
+            width:          26,
+            height:         26,
+            borderRadius:   '50%',
+            background:     `${color}18`,
+            border:         `1px solid ${color}30`,
+            display:        'flex',
+            alignItems:     'center',
+            justifyContent: 'center',
+            fontSize:       10,
+            fontWeight:     600,
+            color:          `${color}cc`,
+            letterSpacing:  '0.5px',
+            flexShrink:     0,
+          }}>
+            {initials}
+          </div>
+          <span style={{
+            fontSize:   12,
+            color:      'rgba(255,255,255,0.4)',
+            fontFamily: 'system-ui,-apple-system,sans-serif',
+          }}>
+            {user?.name?.split(' ')[0] || ''}
+          </span>
         </div>
 
-        {/* Dropdown menu */}
+        {/* Dropdown */}
         {menuOpen && (
           <>
-            {/* Backdrop to close */}
-            <div
-              onClick={() => setMenuOpen(false)}
-              style={{ position: 'fixed', inset: 0, zIndex: 99 }}
-            />
+            <div onClick={() => setMenuOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 99 }} />
             <div style={{
               position:     'absolute',
-              top:          38,
+              top:          42,
               right:        0,
-              width:        170,
-              background:   'rgba(10,13,22,0.97)',
-              border:       '1px solid rgba(255,255,255,0.08)',
+              width:        160,
+              background:   'rgba(8,10,18,0.98)',
+              border:       '1px solid rgba(255,255,255,0.07)',
               borderRadius: 10,
-              boxShadow:    '0 8px 32px rgba(0,0,0,0.5)',
+              boxShadow:    '0 12px 40px rgba(0,0,0,0.6)',
               zIndex:       100,
               overflow:     'hidden',
-              backdropFilter: 'blur(20px)',
+              backdropFilter: 'blur(24px)',
             }}>
-              <button
-                onClick={() => { setMenuOpen(false); navigate('/join'); }}
-                style={menuItemStyle}
-              >
+              <button onClick={() => { setMenuOpen(false); navigate('/join?manage=true'); }} style={menuItemStyle}>
                 Connect apps
               </button>
-              <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }} />
-              <button
-                onClick={() => { setMenuOpen(false); onLogout(); }}
-                style={{ ...menuItemStyle, color: 'rgba(255,100,100,0.7)' }}
-              >
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }} />
+              <button onClick={() => { setMenuOpen(false); onLogout(); }} style={{ ...menuItemStyle, color: 'rgba(255,80,80,0.6)' }}>
                 Log out
               </button>
             </div>
