@@ -29,19 +29,56 @@ const SERIF = "'Playfair Display',Georgia,serif";
 
 const TYPE_ICON = { email: '✉', calendar: '◷', github: '⌥', general: '◈' };
 
-function timeToMinutes(t) {
-  if (!t) return 9999;
-  const m = t.match(/(\d+):(\d+)\s*(AM|PM)?/i);
-  if (!m) return 9999;
-  let h = parseInt(m[1], 10);
-  const min = parseInt(m[2], 10);
-  const p = (m[3] || '').toUpperCase();
-  if (p === 'PM' && h !== 12) h += 12;
-  if (p === 'AM' && h === 12) h = 0;
-  return h * 60 + min;
+// Process raw calendar events in the browser so times use the user's local timezone
+function processCalendar(raw) {
+  const now        = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  return raw.map(e => {
+    // Support both new format (startRaw) and old cached format (dateLabel/time already set)
+    const startRaw = e.startRaw || e.date || '';
+    if (!startRaw) return null;
+
+    const d      = new Date(startRaw);
+    const evDay  = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const daysUntil = Math.round((evDay - todayStart) / 86400000);
+
+    if (daysUntil < 0) return null; // skip past events
+
+    const isAllDay  = e.isAllDay ?? !startRaw.includes('T');
+    const isToday   = daysUntil === 0;
+    const dateLabel = isToday   ? 'Today'
+      : daysUntil === 1         ? 'Tomorrow'
+      : d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+    const time = isAllDay
+      ? 'All day'
+      : d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+    return { ...e, startRaw, isAllDay, isToday, dateLabel, daysUntil, time };
+  }).filter(Boolean);
 }
+
 function sortByTime(evs) {
-  return [...evs].sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
+  return [...evs].sort((a, b) => {
+    // Sort using real timestamps when available (most accurate)
+    if (a.startRaw && b.startRaw) {
+      return new Date(a.startRaw).getTime() - new Date(b.startRaw).getTime();
+    }
+    // Fallback: parse formatted time string
+    const parse = t => {
+      if (!t) return 9999;
+      const m = t.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+      if (!m) return 9999;
+      let h = parseInt(m[1], 10);
+      const min = parseInt(m[2], 10);
+      const p = (m[3] || '').toUpperCase();
+      if (p === 'PM' && h !== 12) h += 12;
+      if (p === 'AM' && h === 12) h = 0;
+      return h * 60 + min;
+    };
+    return parse(a.time) - parse(b.time);
+  });
 }
 
 // Cursor-tracking ambient light for insights section
@@ -85,12 +122,12 @@ export default function BoardShell({ children, data, themeKey }) {
 
   const accent  = ACCENT[themeKey] || '#2563EB';
   const bgTint  = BG_TINT[themeKey] || BG_TINT.engineer;
-  const cal     = data?.calendar      || [];
+  const cal     = processCalendar(data?.calendar || []);
   const emails  = data?.emails        || [];
   const connected = data?.connectedApps || [];
 
   const todayEvents    = sortByTime(cal.filter(e => e.isToday));
-  const upcomingEvents = cal.filter(e => !e.isToday && e.daysUntil >= 0);
+  const upcomingEvents = cal.filter(e => !e.isToday);
   const unread         = emails.filter(e => e.isUnread).slice(0, 20);
 
   const groups = upcomingEvents.slice(0, 40).reduce((acc, ev) => {
@@ -251,12 +288,12 @@ export default function BoardShell({ children, data, themeKey }) {
 
         {/* ── Insights section — landing page style ──────────────── */}
         <div style={{
-          position:  'relative',
-          background:'#F9F8F6',
-          padding:   '80px 72px 100px',
+          position:   'relative',
+          background: '#F9F8F6',
+          padding:    '80px 72px 100px',
           flexShrink: 0,
-          overflow:  'hidden',
-          minHeight: insights === null ? 340 : 'auto',
+          overflow:   'hidden',
+          minHeight:  'calc(100vh - 50px)',
         }}>
           {/* Noise texture */}
           <div style={{

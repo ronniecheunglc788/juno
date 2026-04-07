@@ -108,22 +108,16 @@ export default async function handler(req, res) {
         actionName: 'GOOGLECALENDAR_EVENTS_LIST',
         params: { calendarId: 'primary', maxResults: 40, timeMin: now.toISOString(), timeMax: twoWeeks.toISOString(), singleEvents: true, orderBy: 'startTime' },
       });
-      console.log('CAL raw:', JSON.stringify(r?.data).slice(0, 300));
       const items = r?.data?.items || r?.data?.response_data?.items || [];
       result.calendar = items.map(e => {
-        const dateStr = e.start?.dateTime || e.start?.date || '';
-        const label   = calendarLabel(dateStr);
-        if (!label) return null;
-        const d = new Date(dateStr);
+        const startRaw = e.start?.dateTime || e.start?.date || '';
+        if (!startRaw) return null;
         return {
-          title:     e.summary || 'Untitled',
-          date:      dateStr,
-          dateLabel: label,
-          time:      dateStr.includes('T') ? d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : 'All day',
-          daysUntil: Math.floor((d - new Date()) / 86400000),
-          isToday:   label === 'Today',
+          title:    e.summary || 'Untitled',
+          startRaw,                              // raw ISO — client formats in local timezone
+          isAllDay: !e.start?.dateTime,
         };
-      }).filter(Boolean).slice(0, 30);
+      }).filter(Boolean).slice(0, 40);
     })().catch(err => console.error('[board-data] calendar error', err)),
 
     // Notion
