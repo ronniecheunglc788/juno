@@ -106,12 +106,10 @@ export default async function handler(req, res) {
       const twoWeeks = new Date(now.getTime() + 14 * 86400000);
       const r = await entity.execute({
         actionName: 'GOOGLECALENDAR_EVENTS_LIST',
-        params: { calendarId: 'primary', maxResults: 40, timeMin: now.toISOString(), timeMax: twoWeeks.toISOString() },
+        params: { calendarId: 'primary', maxResults: 40, timeMin: now.toISOString(), timeMax: twoWeeks.toISOString(), singleEvents: true, orderBy: 'startTime' },
       });
-      const calKeys = Object.keys(r?.data || {}).join(',');
-      const calCount = (r?.data?.items || []).length;
-      console.log(`CAL keys=${calKeys} items=${calCount}`);
-      const items = r?.data?.items || [];
+      console.log('CAL raw:', JSON.stringify(r?.data).slice(0, 300));
+      const items = r?.data?.items || r?.data?.response_data?.items || [];
       result.calendar = items.map(e => {
         const dateStr = e.start?.dateTime || e.start?.date || '';
         const label   = calendarLabel(dateStr);
