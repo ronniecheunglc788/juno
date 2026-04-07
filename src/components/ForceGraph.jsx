@@ -234,7 +234,7 @@ export default function ForceGraph({ nodes: nodeDefs, edges: edgeDefs, theme, on
           ctx.shadowColor = color; ctx.shadowBlur = 40;
           ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI*2);
           ctx.fillStyle = color; ctx.fill(); ctx.shadowBlur = 0;
-          ctx.font = '600 12px system-ui,-apple-system,sans-serif';
+          ctx.font = '500 13px "DM Sans",system-ui,-apple-system,sans-serif';
           ctx.fillStyle = '#fff'; ctx.globalAlpha = 0.92;
           ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
           ctx.fillText(n.label || '', n.x, n.y);
@@ -266,7 +266,7 @@ export default function ForceGraph({ nodes: nodeDefs, edges: edgeDefs, theme, on
         if (n.label) {
           const maxCh = 14;
           const lbl   = n.label.length > maxCh ? n.label.slice(0, maxCh-1) + '…' : n.label;
-          ctx.font      = theme.labelFont ?? '10px system-ui,-apple-system,sans-serif';
+          ctx.font      = theme.labelFont ?? '12px "DM Sans",system-ui,-apple-system,sans-serif';
           ctx.fillStyle = theme.label ?? 'rgba(255,255,255,0.4)';
           ctx.globalAlpha = isSel ? 0.9 : 0.55;
           ctx.textAlign = 'center';

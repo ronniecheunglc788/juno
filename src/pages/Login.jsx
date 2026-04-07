@@ -1,21 +1,18 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const S = {
-  page:     { width: '100vw', height: '100vh', background: '#F7F5F0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Inter', sans-serif" },
-  card:     { width: 420, background: '#fff', border: '1px solid #E8E2D9', borderRadius: 16, padding: '44px 40px', boxShadow: '0 2px 24px rgba(0,0,0,0.06)' },
-  logo:     { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 32 },
-  ball:     { width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#C9A84C,#8B6914)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: '#fff' },
-  txt:      { color: '#8B6914', fontWeight: 700, fontSize: 14, letterSpacing: '2px' },
-  h1:       { color: '#111', fontSize: 22, fontWeight: 700, margin: '0 0 6px', letterSpacing: '-0.3px' },
-  sub:      { color: '#888', fontSize: 14, margin: '0 0 24px', lineHeight: 1.6 },
-  label:    { color: '#555', fontSize: 12, fontWeight: 600, marginBottom: 6, display: 'block' },
-  input:    { width: '100%', background: '#FAFAF9', border: '1px solid #E0DAD0', borderRadius: 8, padding: '11px 14px', color: '#111', fontSize: 14, marginBottom: 12, boxSizing: 'border-box', outline: 'none', fontFamily: "'Inter', sans-serif" },
-  btn:      { width: '100%', background: '#1A1208', border: 'none', borderRadius: 8, padding: '13px', color: '#fff', fontWeight: 600, fontSize: 14, cursor: 'pointer', marginTop: 8, fontFamily: "'Inter', sans-serif" },
-  err:      { color: '#C0392B', fontSize: 13, marginTop: 4, padding: '8px 12px', background: 'rgba(192,57,43,0.05)', borderRadius: 6 },
-  foot:     { marginTop: 20, textAlign: 'center', fontSize: 13, color: '#aaa' },
-  link:     { color: '#8B6914', textDecoration: 'none', fontWeight: 600 },
-  divider:  { borderTop: '1px solid #F0EBE3', margin: '24px 0' },
+  page:  { width: '100vw', minHeight: '100vh', background: '#09090F', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'DM Sans','Inter',system-ui,sans-serif", padding: '40px 20px', boxSizing: 'border-box' },
+  card:  { width: 420, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '40px 36px', boxShadow: '0 24px 64px rgba(0,0,0,0.4)' },
+  word:  { fontSize: 12, fontWeight: 400, letterSpacing: '6px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', marginBottom: 36, userSelect: 'none' },
+  h1:    { color: 'rgba(255,255,255,0.88)', fontSize: 22, fontWeight: 500, margin: '0 0 8px', letterSpacing: '-0.3px' },
+  sub:   { color: 'rgba(255,255,255,0.3)', fontSize: 14, margin: '0 0 28px', lineHeight: 1.65 },
+  label: { color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 500, letterSpacing: '0.5px', marginBottom: 7, display: 'block', textTransform: 'uppercase' },
+  input: { width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '12px 14px', color: 'rgba(255,255,255,0.85)', fontSize: 15, marginBottom: 14, boxSizing: 'border-box', outline: 'none', fontFamily: "'DM Sans','Inter',system-ui,sans-serif" },
+  btn:   { width: '100%', background: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: 8, padding: '13px', color: '#09090F', fontWeight: 600, fontSize: 15, cursor: 'pointer', marginTop: 8, fontFamily: "'DM Sans','Inter',system-ui,sans-serif", transition: 'opacity 0.15s' },
+  err:   { color: 'rgba(240,80,80,0.9)', fontSize: 13, marginTop: 8, padding: '9px 12px', background: 'rgba(240,80,80,0.07)', borderRadius: 6, border: '1px solid rgba(240,80,80,0.12)' },
+  foot:  { marginTop: 24, textAlign: 'center', fontSize: 13, color: 'rgba(255,255,255,0.2)' },
+  link:  { color: 'rgba(255,255,255,0.45)', textDecoration: 'none' },
 };
 
 export default function Login() {
@@ -27,8 +24,7 @@ export default function Login() {
   async function handleLogin(e) {
     e.preventDefault();
     if (!email.trim()) return setError('Email required');
-    setLoading(true);
-    setError('');
+    setLoading(true); setError('');
     try {
       const res = await fetch(`/api/user?email=${encodeURIComponent(email.trim().toLowerCase())}`);
       const data = await res.json();
@@ -45,10 +41,7 @@ export default function Login() {
   return (
     <div style={S.page}>
       <div style={S.card}>
-        <div style={S.logo}>
-          <div style={S.ball}>B</div>
-          <span style={S.txt}>BREEZE</span>
-        </div>
+        <div style={S.word}>breeze</div>
         <h1 style={S.h1}>Welcome back</h1>
         <p style={S.sub}>Enter your email to get back to your board.</p>
         <form onSubmit={handleLogin}>
@@ -63,12 +56,11 @@ export default function Login() {
           />
           {error && <div style={S.err}>{error}</div>}
           <button style={S.btn} type="submit" disabled={loading}>
-            {loading ? 'Finding your board…' : 'Take me to my board →'}
+            {loading ? 'Finding your board…' : 'Continue'}
           </button>
         </form>
-        <div style={S.divider} />
         <div style={S.foot}>
-          New here? <Link to="/join" style={S.link}>Set up your board</Link>
+          New here? <a href="/join" style={S.link}>Set up your board</a>
         </div>
       </div>
     </div>
