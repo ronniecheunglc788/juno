@@ -117,7 +117,8 @@ function AmbientLight({ accent }) {
 
 export default function BoardShell({ children, data, themeKey }) {
   const [tab,      setTab]      = useState('schedule');
-  const [insights, setInsights] = useState(null); // null=loading, []=none
+  const [insights,     setInsights]     = useState(null);  // null=loading
+  const [insightError, setInsightError] = useState('');
   const fetched = useRef(false);
 
   const accent  = ACCENT[themeKey] || '#2563EB';
@@ -153,8 +154,11 @@ export default function BoardShell({ children, data, themeKey }) {
       body:    JSON.stringify({ data }),
     })
       .then(r => r.json())
-      .then(d => setInsights(d.insights || []))
-      .catch(() => setInsights([]));
+      .then(d => {
+        if (d.error) { setInsightError(d.error); setInsights([]); return; }
+        setInsights(d.insights || []);
+      })
+      .catch(err => { setInsightError(err.message); setInsights([]); });
   }, [data]);
 
   return (
@@ -342,9 +346,15 @@ export default function BoardShell({ children, data, themeKey }) {
                   <div style={{ height: 8, width: '65%', borderRadius: 4, background: 'rgba(0,0,0,0.04)' }} />
                 </div>
               ))
+            ) : insightError ? (
+              <div style={{ fontSize: 13, color: 'rgba(0,0,0,0.35)', fontWeight: 300, lineHeight: 1.7 }}>
+                {insightError === 'AI not configured'
+                  ? 'Add your GEMINI_API_KEY to Vercel environment variables and redeploy.'
+                  : `Could not load insights: ${insightError}`}
+              </div>
             ) : insights.length === 0 ? (
-              <div style={{ fontSize: 14, color: 'rgba(0,0,0,0.3)', fontWeight: 300 }}>
-                Connect more apps for Breeze to generate insights.
+              <div style={{ fontSize: 13, color: 'rgba(0,0,0,0.3)', fontWeight: 300 }}>
+                No insights generated. Try connecting more apps.
               </div>
             ) : (
               insights.map((ins, i) => (
