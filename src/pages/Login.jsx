@@ -34,20 +34,34 @@ function AmbientLight() {
   return <div ref={ref} style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 1 }} />;
 }
 
+const inputStyle = {
+  width: '100%', boxSizing: 'border-box',
+  background: 'rgba(10,10,10,0.03)',
+  border: '1px solid rgba(10,10,10,0.09)',
+  borderRadius: 9, padding: '11px 14px',
+  fontSize: 15, color: 'rgba(10,10,10,0.85)',
+  fontFamily: "'DM Sans', system-ui, sans-serif",
+  outline: 'none', marginBottom: 14,
+};
+
 export default function Login() {
   const navigate = useNavigate();
-  const [email, setEmail]   = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError]   = useState('');
+  const [email,    setEmail]    = useState('');
+  const [password, setPassword] = useState('');
+  const [loading,  setLoading]  = useState(false);
+  const [error,    setError]    = useState('');
 
   async function handleLogin(e) {
     e.preventDefault();
     if (!email.trim()) return setError('Email required');
+    if (!password)     return setError('Password required');
     setLoading(true); setError('');
     try {
-      const res  = await fetch(`/api/user?email=${encodeURIComponent(email.trim().toLowerCase())}`);
+      const res  = await fetch(
+        `/api/user?email=${encodeURIComponent(email.trim().toLowerCase())}&password=${encodeURIComponent(password)}`
+      );
       const data = await res.json();
-      if (!res.ok) throw new Error('No account found — try signing up instead');
+      if (!res.ok) throw new Error(data.error || 'Sign in failed');
       localStorage.setItem('breeze_user', JSON.stringify(data));
       navigate('/board');
     } catch (err) { setError(err.message); }
@@ -58,18 +72,17 @@ export default function Login() {
     <div style={{
       minHeight:     '100vh',
       background:    '#F9F8F6',
-      position:      'relative',
       display:       'flex',
       alignItems:    'center',
       justifyContent:'center',
       fontFamily:    "'DM Sans', system-ui, sans-serif",
       padding:       '40px 24px',
+      position:      'relative',
     }}>
       <AmbientLight />
-      <div style={{ position: 'relative', zIndex: 2 }}>
+      <div style={{ position: 'relative', zIndex: 2, width: '100%', maxWidth: 400 }}>
       <div style={{
         width:         '100%',
-        maxWidth:      400,
         background:    'rgba(255,255,255,0.8)',
         backdropFilter:'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
@@ -98,33 +111,40 @@ export default function Login() {
           Welcome back.
         </h2>
         <p style={{ fontSize: 13, color: 'rgba(10,10,10,0.38)', margin: '0 0 28px', lineHeight: 1.6 }}>
-          Enter your email to return to your board.
+          Enter your credentials to continue.
         </p>
 
         <form onSubmit={handleLogin}>
-          <label style={{
-            display: 'block', fontSize: 11, fontWeight: 500,
-            letterSpacing: '0.6px', textTransform: 'uppercase',
-            color: 'rgba(10,10,10,0.38)', marginBottom: 7,
-          }}>
-            Email
-          </label>
+          <label style={labelStyle}>Email</label>
           <input
             type="email"
             value={email}
             onChange={e => setEmail(e.target.value)}
             placeholder="you@school.edu"
             autoFocus
-            style={{
-              width: '100%', boxSizing: 'border-box',
-              background: 'rgba(10,10,10,0.03)',
-              border: '1px solid rgba(10,10,10,0.09)',
-              borderRadius: 9, padding: '11px 14px',
-              fontSize: 15, color: 'rgba(10,10,10,0.85)',
-              fontFamily: "'DM Sans', system-ui, sans-serif",
-              outline: 'none', marginBottom: 16,
-            }}
+            style={inputStyle}
           />
+
+          <label style={labelStyle}>Password</label>
+          <input
+            type="password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            placeholder="••••••••"
+            style={inputStyle}
+          />
+
+          <div style={{ textAlign: 'right', marginTop: -8, marginBottom: 16 }}>
+            <a href="/reset" style={{
+              fontSize: 12, color: 'rgba(10,10,10,0.38)',
+              textDecoration: 'none',
+            }}
+              onMouseEnter={e => e.target.style.color = 'rgba(10,10,10,0.6)'}
+              onMouseLeave={e => e.target.style.color = 'rgba(10,10,10,0.38)'}
+            >
+              Forgot password?
+            </a>
+          </div>
 
           {error && (
             <div style={{
@@ -148,10 +168,9 @@ export default function Login() {
               cursor: loading ? 'not-allowed' : 'pointer',
               opacity: loading ? 0.5 : 1,
               fontFamily: "'DM Sans', system-ui, sans-serif",
-              marginTop: 4,
             }}
           >
-            {loading ? 'Finding your board…' : 'Continue'}
+            {loading ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
 
@@ -166,3 +185,9 @@ export default function Login() {
     </div>
   );
 }
+
+const labelStyle = {
+  display: 'block', fontSize: 11, fontWeight: 500,
+  letterSpacing: '0.6px', textTransform: 'uppercase',
+  color: 'rgba(10,10,10,0.38)', marginBottom: 7,
+};

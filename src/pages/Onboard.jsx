@@ -76,8 +76,11 @@ function AmbientLight() {
 
 // ── Step 1: Landing / register ────────────────────────────────────
 function LandingStep({ onSubmit, loading, error }) {
-  const [name, setName]   = useState('');
-  const [email, setEmail] = useState('');
+  const [name,     setName]     = useState('');
+  const [email,    setEmail]    = useState('');
+  const [password, setPassword] = useState('');
+  const [confirm,  setConfirm]  = useState('');
+  const [localErr, setLocalErr] = useState('');
 
   return (
     <div style={{
@@ -207,7 +210,13 @@ function LandingStep({ onSubmit, loading, error }) {
             Connect your apps. Breeze builds a personalized view of your world.
           </p>
 
-          <form onSubmit={e => { e.preventDefault(); onSubmit(name, email); }}>
+          <form onSubmit={e => {
+            e.preventDefault();
+            setLocalErr('');
+            if (password.length < 8) return setLocalErr('Password must be at least 8 characters');
+            if (password !== confirm) return setLocalErr('Passwords do not match');
+            onSubmit(name, email, password);
+          }}>
             <Field label="Name">
               <Input
                 value={name}
@@ -224,15 +233,31 @@ function LandingStep({ onSubmit, loading, error }) {
                 placeholder="you@school.edu"
               />
             </Field>
+            <Field label="Password">
+              <Input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="Min. 8 characters"
+              />
+            </Field>
+            <Field label="Confirm password">
+              <Input
+                type="password"
+                value={confirm}
+                onChange={e => setConfirm(e.target.value)}
+                placeholder="Repeat password"
+              />
+            </Field>
 
-            {error && (
+            {(localErr || error) && (
               <div style={{
                 fontSize: 12, color: 'rgba(180,40,40,0.85)',
                 background: 'rgba(180,40,40,0.05)',
                 border: '1px solid rgba(180,40,40,0.1)',
                 borderRadius: 8, padding: '8px 12px', marginBottom: 14,
               }}>
-                {error}
+                {localErr || error}
               </div>
             )}
 
@@ -548,13 +573,13 @@ export default function Onboard() {
     }
   }, [navigate, isManage]);
 
-  async function handleSignup(name, email) {
+  async function handleSignup(name, email, password) {
     if (!name.trim() || !email.trim()) return setError('Both fields required');
     setLoading(true); setError('');
     try {
       const res  = await fetch('/api/user', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), email: email.trim().toLowerCase() }),
+        body: JSON.stringify({ name: name.trim(), email: email.trim().toLowerCase(), password }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);

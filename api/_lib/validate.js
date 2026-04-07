@@ -16,6 +16,13 @@ export function validateUUID(id, fieldName = 'id') {
   return null;
 }
 
+export function validatePassword(password) {
+  if (typeof password !== 'string') return 'Password must be a string';
+  if (password.length < 8)          return 'Password must be at least 8 characters';
+  if (password.length > 128)        return 'Password too long';
+  return null;
+}
+
 export function validateString(value, fieldName, { maxLength = 500 } = {}) {
   if (typeof value !== 'string') return `${fieldName} must be a string`;
   if (value.length === 0)        return `${fieldName} is required`;
