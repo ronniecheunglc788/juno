@@ -1,17 +1,121 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PremedBoard   from '../components/boards/PremedBoard';
-import CSBoard       from '../components/boards/CSBoard';
+import EngineerBoard from '../components/boards/CSBoard';
 import BusinessBoard from '../components/boards/BusinessBoard';
 import CreativeBoard from '../components/boards/CreativeBoard';
-import SeniorBoard   from '../components/boards/SeniorBoard';
+
+const ARCH_LABEL = {
+  engineer: 'Engineer',
+  cs:       'Engineer',
+  business: 'Business',
+  premed:   'Pre-Med',
+  creative: 'Creative',
+};
+
+const ARCH_COLOR = {
+  engineer: '#58A6FF',
+  cs:       '#58A6FF',
+  business: '#C9A84C',
+  premed:   '#34D399',
+  creative: '#C084FC',
+};
+
+function UserNav({ user }) {
+  const initials = (user?.name || '?')
+    .split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase();
+  const arch  = user?.archetype || 'engineer';
+  const color = ARCH_COLOR[arch] || '#58A6FF';
+  const label = ARCH_LABEL[arch] || arch;
+
+  return (
+    <div style={{
+      height:          48,
+      flexShrink:      0,
+      display:         'flex',
+      alignItems:      'center',
+      justifyContent:  'space-between',
+      padding:         '0 24px',
+      borderBottom:    '1px solid rgba(255,255,255,0.05)',
+      background:      'rgba(5,8,15,0.96)',
+      backdropFilter:  'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
+      zIndex:          50,
+      position:        'relative',
+    }}>
+
+      {/* Wordmark */}
+      <div style={{
+        fontSize:      13,
+        fontWeight:    300,
+        letterSpacing: '5px',
+        color:         'rgba(255,255,255,0.8)',
+        textTransform: 'uppercase',
+        fontFamily:    'system-ui,-apple-system,sans-serif',
+        userSelect:    'none',
+      }}>
+        breeze
+      </div>
+
+      {/* User identity */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        {/* Archetype badge */}
+        <div style={{
+          fontSize:      10,
+          fontWeight:    500,
+          letterSpacing: '0.8px',
+          textTransform: 'uppercase',
+          color:         color,
+          background:    `${color}14`,
+          border:        `1px solid ${color}28`,
+          borderRadius:  5,
+          padding:       '3px 9px',
+          fontFamily:    'system-ui,-apple-system,sans-serif',
+        }}>
+          {label}
+        </div>
+
+        {/* Name */}
+        <div style={{
+          fontSize:   13,
+          color:      'rgba(255,255,255,0.55)',
+          fontFamily: 'system-ui,-apple-system,sans-serif',
+          fontWeight: 400,
+        }}>
+          {user?.name?.split(' ')[0] || ''}
+        </div>
+
+        {/* Avatar */}
+        <div style={{
+          width:        30,
+          height:       30,
+          borderRadius: '50%',
+          background:   `${color}22`,
+          border:       `1px solid ${color}44`,
+          display:      'flex',
+          alignItems:   'center',
+          justifyContent:'center',
+          fontSize:     11,
+          fontWeight:   600,
+          color:        color,
+          fontFamily:   'system-ui,-apple-system,sans-serif',
+          letterSpacing:'0.5px',
+          userSelect:   'none',
+          flexShrink:   0,
+        }}>
+          {initials}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Board() {
   const navigate = useNavigate();
-  const [user, setUser]     = useState(null);
-  const [data, setData]     = useState(null);
+  const [user, setUser]       = useState(null);
+  const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError]   = useState('');
+  const [error, setError]     = useState('');
 
   useEffect(() => {
     const saved = localStorage.getItem('breeze_user');
@@ -22,10 +126,7 @@ export default function Board() {
 
     fetch(`/api/board-data?userId=${u.id}&entityId=${u.entity_id}`)
       .then(r => r.json())
-      .then(d => {
-        if (d.error) throw new Error(d.error);
-        setData(d);
-      })
+      .then(d => { if (d.error) throw new Error(d.error); setData(d); })
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
   }, [navigate]);
@@ -33,16 +134,21 @@ export default function Board() {
   if (error) return <ErrorState error={error} />;
   if (!user)  return null;
 
-  const archetype = user.archetype;
+  const arch  = user.archetype;
+  const Board =
+    arch === 'premed'   ? PremedBoard   :
+    arch === 'business' ? BusinessBoard :
+    arch === 'creative' ? CreativeBoard :
+    EngineerBoard;
 
-  if (archetype === 'premed')   return <PremedBoard   data={data} loading={loading} />;
-  if (archetype === 'cs')       return <CSBoard       data={data} loading={loading} />;
-  if (archetype === 'business') return <BusinessBoard data={data} loading={loading} />;
-  if (archetype === 'creative') return <CreativeBoard data={data} loading={loading} />;
-  if (archetype === 'senior')   return <SeniorBoard   data={data} loading={loading} />;
-
-  // Fallback — shouldn't happen if detect ran
-  return <SeniorBoard data={data} loading={loading} />;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+      <UserNav user={user} />
+      <div style={{ flex: 1, overflow: 'hidden' }}>
+        <Board data={data} loading={loading} />
+      </div>
+    </div>
+  );
 }
 
 function ErrorState({ error }) {

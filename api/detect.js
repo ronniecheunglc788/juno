@@ -7,27 +7,25 @@ const SIGNALS = {
   premed: [
     'mcat', 'shadowing', 'clinical', 'hospital', 'patient', 'pre-med', 'premed',
     'orgo', 'biochem', 'amcas', 'mcas', 'medical school', 'volunteer hours',
-    'research hours', 'physician', 'attending', 'rotation',
+    'research hours', 'physician', 'attending', 'rotation', 'usmle', 'kaplan',
   ],
-  cs: [
+  engineer: [
     'github', 'leetcode', 'pull request', 'commit', 'deploy', 'bug', 'sprint',
-    'hackathon', 'internship', 'swe', 'software engineer', 'cs', 'coding',
+    'hackathon', 'internship', 'swe', 'software engineer', 'coding',
     'repo', 'stack overflow', 'docker', 'api', 'backend', 'frontend',
+    'data science', 'machine learning', 'algorithm', 'system design',
   ],
   business: [
     'networking', 'coffee chat', 'linkedin', 'recruiter', 'consulting',
     'case interview', 'investment banking', 'private equity', 'venture',
-    'pitch', 'startup', 'entrepreneur', 'business', 'finance', 'excel',
+    'pitch', 'finance', 'excel', 'financial modeling', 'return offer',
+    'superday', 'first round', 'hirevue', 'bulge bracket',
   ],
   creative: [
     'instagram', 'tiktok', 'youtube', 'figma', 'portfolio', 'design',
-    'brand', 'content', 'post', 'shoot', 'edit', 'creative brief',
+    'brand', 'content', 'shoot', 'edit', 'creative brief',
     'client', 'freelance', 'aesthetic', 'newsletter', 'substack',
-  ],
-  senior: [
-    'graduation', 'senior thesis', 'job offer', 'grad school', 'gap year',
-    'apartment', 'post-grad', 'offer letter', 'moving', 'last semester',
-    'final semester', 'commencement', 'alumni',
+    'dribbble', 'behance', 'illustrator', 'photoshop', 'premiere',
   ],
 };
 
@@ -45,8 +43,8 @@ function detectArchetype(signals) {
   }
 
   // Bonus: connected apps are strong signals
-  if (signals.includes('__app:github'))    scores.cs       += 8;
-  if (signals.includes('__app:discord'))   scores.cs       += 5;
+  if (signals.includes('__app:github'))    scores.engineer += 8;
+  if (signals.includes('__app:discord'))   scores.engineer += 4;
   if (signals.includes('__app:linkedin'))  scores.business += 6;
   if (signals.includes('__app:asana'))     scores.business += 3;
   if (signals.includes('__app:instagram')) scores.creative += 7;
@@ -54,11 +52,11 @@ function detectArchetype(signals) {
   if (signals.includes('__app:youtube'))   scores.creative += 6;
   if (signals.includes('__app:spotify'))   scores.creative += 2;
   if (signals.includes('__app:strava'))    scores.premed   += 3;
-  if (signals.includes('__app:todoist'))   scores.cs       += 2;
+  if (signals.includes('__app:todoist'))   scores.engineer += 2;
 
   const winner = Object.entries(scores).sort((a, b) => b[1] - a[1])[0];
-  // If nothing matched at all, default to senior (most generic)
-  return winner[1] > 0 ? winner[0] : 'senior';
+  // Default to business — most generic fit for undecided students
+  return winner[1] > 0 ? winner[0] : 'business';
 }
 
 const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes

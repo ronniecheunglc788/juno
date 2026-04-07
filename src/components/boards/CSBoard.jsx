@@ -1,170 +1,156 @@
-const P = {
-  bg: '#0D1117', surface: '#161B22', border: 'rgba(48,54,61,1)',
-  blue: '#58A6FF', green: '#3FB950', red: '#F85149', amber: '#E3B341',
-  text: '#E6EDF3', mid: '#8B949E', dim: '#484F58',
+import { useState, useMemo } from 'react';
+import BoardShell from '../BoardShell';
+import ForceGraph from '../ForceGraph';
+import NodeDetail from '../NodeDetail';
+
+// ── Engineer theme: circuit board ────────────────────────────────
+// Hexagon nodes, circuit-trace edges, grid background
+const THEME = {
+  bg:        '#060B12',
+  glow:      'rgba(88,166,255,0.05)',
+  label:     'rgba(200,220,255,0.38)',
+  labelFont: '10px "SF Mono","Fira Code",monospace',
+  nodeShape: 'hex',
+  edgeStyle: 'circuit',
+  color: (type) => {
+    switch (type) {
+      case 'center':     return '#58A6FF';
+      case 'repo':       return '#3FB950';
+      case 'repo-stale': return '#2A3540';
+      case 'recruit':    return '#E3B341';
+      case 'recruit-r':  return '#3A4450';
+      case 'event':      return '#56B6C2';
+      case 'note':       return '#404850';
+      default:           return '#2A3540';
+    }
+  },
+  initBackground: (W, H) => {
+    const spacing = 42;
+    const dots = [];
+    for (let x = spacing / 2; x < W; x += spacing)
+      for (let y = spacing / 2; y < H; y += spacing)
+        dots.push({ x, y });
+    return { spacing, dots };
+  },
+  drawBackground: (ctx, W, H, frame, memo) => {
+    if (!memo) return;
+    const { spacing, dots } = memo;
+    ctx.strokeStyle = 'rgba(88,166,255,0.03)';
+    ctx.lineWidth   = 0.5;
+    for (let x = spacing / 2; x < W; x += spacing) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+    }
+    for (let y = spacing / 2; y < H; y += spacing) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+    ctx.fillStyle = 'rgba(88,166,255,0.09)';
+    dots.forEach(({ x, y }) => {
+      ctx.beginPath(); ctx.arc(x, y, 1.2, 0, Math.PI * 2); ctx.fill();
+    });
+  },
 };
 
-const TECH_COMPANIES = ['google', 'meta', 'amazon', 'apple', 'microsoft', 'netflix', 'stripe', 'airbnb',
-  'uber', 'lyft', 'coinbase', 'databricks', 'openai', 'anthropic', 'palantir', 'jane street',
-  'two sigma', 'citadel', 'de shaw', 'goldman', 'jpmorgan', 'bloomberg'];
-
-function isRecruiting(email) {
-  const s = (email.subject + ' ' + email.from + ' ' + email.fromEmail).toLowerCase();
-  return TECH_COMPANIES.some(c => s.includes(c)) ||
-    ['recruiter', 'recruiting', 'opportunity', 'application', 'interview', 'offer', 'internship', 'new grad'].some(k => s.includes(k));
+function staleDays(d) {
+  if (!d) return 999;
+  return Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
 }
-
-function staleness(dateStr) {
-  if (!dateStr) return 999;
-  return Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000);
-}
-
-function staleLabel(days) {
-  if (days < 1)  return 'today';
-  if (days < 7)  return `${days}d ago`;
-  if (days < 30) return `${Math.floor(days / 7)}w ago`;
-  return `${Math.floor(days / 30)}mo ago`;
-}
-
-// Simple heatmap: bucket calendar events into 28 day-slots
-function buildHeatmap(calendar) {
-  const buckets = Array(28).fill(0);
-  calendar.forEach(ev => {
-    const slot = Math.min(ev.daysUntil, 27);
-    if (slot >= 0) buckets[slot]++;
-  });
-  const max = Math.max(...buckets, 1);
-  return buckets.map(v => v / max);
+function isRecruit(em) {
+  const s = ((em.subject||'')+(em.from||'')+(em.fromEmail||'')).toLowerCase();
+  return ['google','meta','amazon','apple','microsoft','stripe','openai','anthropic','coinbase',
+    'recruiter','recruiting','offer','internship','interview','new grad'].some(k => s.includes(k));
 }
 
 export default function CSBoard({ data, loading }) {
-  if (loading) return <LoadingState />;
-  const firstName = data?.user?.name?.split(' ')[0] || 'there';
-  const repos = data?.github || [];
-  const recruitingEmails = (data?.emails || []).filter(isRecruiting);
-  const cal = data?.calendar || [];
-  const heatmap = buildHeatmap(cal);
-  const notion = data?.notion || [];
+  if (loading) return <Loading />;
+  const [selected, setSelected] = useState(null);
+
+  const { nodes, edges } = useMemo(() => {
+    const firstName = data?.user?.name?.split(' ')[0] || 'you';
+    const repos     = (data?.github   || []).slice(0, 9);
+    const recruits  = (data?.emails   || []).filter(isRecruit).slice(0, 8);
+    const events    = (data?.calendar || []).filter(e => !e.isToday).slice(0, 5);
+    const notes     = (data?.notion   || []).slice(0, 5);
+
+    const ns = [{ id: 'center', type: 'center', label: firstName, size: 20 }];
+
+    // Repos → right cluster, importance by recency
+    repos.forEach((r, i) => {
+      const angle = -Math.PI/2.8 + (i / Math.max(repos.length-1,1)) * (Math.PI*0.8);
+      const days  = staleDays(r.lastCommit);
+      const stale = days > 30;
+      const imp   = stale ? 0.15 : Math.max(0, 1 - days / 30);
+      ns.push({
+        id: `repo-${i}`, type: stale ? 'repo-stale' : 'repo',
+        label: r.name, size: stale ? 6 : Math.round(8 + imp * 4),
+        angle, dist: 300 + i*28, phase: i*0.65,
+        importance: imp,
+        statusLabel: stale ? 'Stale' : days < 3 ? 'Active' : null,
+        rawData: r,
+      });
+    });
+
+    // Recruiting → left cluster, unread = higher importance
+    recruits.forEach((em, i) => {
+      const angle = Math.PI - Math.PI/3 + (i / Math.max(recruits.length-1,1)) * (Math.PI*0.66);
+      const imp   = em.isUnread ? 0.85 : 0.4;
+      ns.push({
+        id: `recruit-${i}`, type: em.isUnread ? 'recruit' : 'recruit-r',
+        label: em.from?.split(' ').slice(0,2).join(' '),
+        size: em.isUnread ? 10 : 7,
+        angle, dist: 290 + i*26, phase: i*0.9,
+        importance: imp,
+        statusLabel: em.isUnread ? 'Unread' : null,
+        rawData: em,
+      });
+    });
+
+    // Events → bottom, soonest = most important
+    events.forEach((ev, i) => {
+      const angle = Math.PI/2 + (i - events.length/2) * 0.28;
+      const imp   = Math.max(0, 1 - i / events.length) * 0.6;
+      ns.push({
+        id: `ev-${i}`, type: 'event', label: ev.title, size: 7,
+        angle, dist: 330 + i*24, phase: i*1.1,
+        importance: imp,
+        rawData: ev,
+      });
+    });
+
+    // Notes → top, low importance
+    notes.forEach((n, i) => {
+      const angle = -Math.PI/2 + (i - notes.length/2) * 0.3;
+      ns.push({
+        id: `note-${i}`, type: 'note', label: n.title, size: 6,
+        angle, dist: 340 + i*20, phase: i*1.3,
+        importance: 0.2,
+        rawData: n,
+      });
+    });
+
+    const es = ns.slice(1).map((n, i) => ({
+      source: 0, target: i+1,
+      strong: n.type === 'repo' || n.type === 'recruit',
+      rest: Math.round(310 - (n.importance ?? 0.3) * 200),
+      k: 0.007,
+    }));
+
+    return { nodes: ns, edges: es };
+  }, [data]);
 
   return (
-    <div style={{ minHeight: '100vh', background: P.bg, fontFamily: '"SF Mono", "Fira Code", monospace', color: P.text }}>
-      {/* Header */}
-      <div style={{ borderBottom: `1px solid ${P.border}`, padding: '14px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ fontSize: 13, color: P.green }}>
-          <span style={{ color: P.mid }}>user@breeze</span>
-          <span style={{ color: P.dim }}> ~/</span>
-          <span style={{ color: P.blue }}>{firstName.toLowerCase()}</span>
-          <span style={{ color: P.dim }}> $</span>
-          <span style={{ color: P.text }}> breeze --board</span>
-        </div>
-        <div style={{ fontSize: 11, color: P.dim }}>{repos.length} repos · {recruitingEmails.length} recruiting threads</div>
+    <BoardShell themeKey="engineer" data={data} loading={loading}>
+      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+        <ForceGraph nodes={nodes} edges={edges} theme={THEME} onNodeClick={setSelected} />
+        <NodeDetail node={selected} accent="#58A6FF" onClose={() => setSelected(null)} />
       </div>
-
-      {/* Heatmap strip */}
-      <div style={{ borderBottom: `1px solid ${P.border}`, padding: '12px 32px' }}>
-        <div style={{ fontSize: 10, color: P.dim, letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 8 }}>CALENDAR DENSITY — NEXT 28 DAYS</div>
-        <div style={{ display: 'flex', gap: 3, alignItems: 'flex-end', height: 28 }}>
-          {heatmap.map((v, i) => (
-            <div key={i} style={{
-              width: 14, borderRadius: 2,
-              height: Math.max(4, v * 28),
-              background: v === 0 ? P.border : v < 0.4 ? '#1A3A1A' : v < 0.7 ? '#196127' : P.green,
-              transition: 'height 0.3s',
-            }} title={`Day ${i + 1}`} />
-          ))}
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-          <span style={{ fontSize: 10, color: P.dim }}>today</span>
-          <span style={{ fontSize: 10, color: P.dim }}>+28d</span>
-        </div>
-      </div>
-
-      {/* 2-column body */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', height: 'calc(100vh - 125px)' }}>
-
-        {/* Left: Repos + Notion */}
-        <div style={{ borderRight: `1px solid ${P.border}`, padding: '24px 28px', overflowY: 'auto' }}>
-          {repos.length > 0 && (
-            <>
-              <div style={sec}>REPOSITORIES</div>
-              {repos.map((r, i) => {
-                const days = staleness(r.lastCommit);
-                const fresh = days < 7;
-                return (
-                  <div key={i} style={{ ...row, borderLeft: `2px solid ${fresh ? P.green : days < 30 ? P.amber : P.dim}` }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, color: P.blue }}>{r.name}</div>
-                      <div style={{ fontSize: 11, color: P.mid, marginTop: 2 }}>{r.language}</div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: 11, color: fresh ? P.green : P.dim }}>{staleLabel(days)}</div>
-                      {r.isStale && <div style={{ fontSize: 10, color: P.red, marginTop: 2 }}>stale</div>}
-                    </div>
-                  </div>
-                );
-              })}
-            </>
-          )}
-
-          {notion.length > 0 && (
-            <>
-              <div style={{ ...sec, marginTop: 28 }}>NOTION</div>
-              {notion.slice(0, 8).map((n, i) => (
-                <div key={i} style={{ ...row, borderLeft: `2px solid ${P.dim}` }}>
-                  <div style={{ fontSize: 13 }}>{n.title}</div>
-                  <div style={{ fontSize: 11, color: P.dim }}>{n.lastEdited}</div>
-                </div>
-              ))}
-            </>
-          )}
-
-          {repos.length === 0 && notion.length === 0 && (
-            <div style={{ color: P.mid, fontSize: 13, paddingTop: 16 }}>
-              Connect GitHub or Notion to see your projects.
-            </div>
-          )}
-        </div>
-
-        {/* Right: Recruiting + Upcoming */}
-        <div style={{ padding: '24px 28px', overflowY: 'auto' }}>
-          <div style={sec}>RECRUITING PIPELINE</div>
-          {recruitingEmails.length === 0 && (
-            <div style={{ color: P.mid, fontSize: 13, marginBottom: 28 }}>No recruiting emails detected yet.</div>
-          )}
-          {recruitingEmails.slice(0, 8).map((em, i) => (
-            <div key={i} style={{ ...row, borderLeft: `2px solid ${em.isUnread ? P.amber : P.dim}` }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, color: em.isUnread ? P.text : P.mid, fontWeight: em.isUnread ? 600 : 400 }}>{em.subject}</div>
-                <div style={{ fontSize: 11, color: P.dim, marginTop: 2 }}>{em.from}</div>
-              </div>
-              <div style={{ fontSize: 11, color: P.dim, flexShrink: 0, marginLeft: 12 }}>{em.date}</div>
-            </div>
-          ))}
-
-          <div style={{ ...sec, marginTop: 28 }}>UPCOMING</div>
-          {cal.length === 0 && <div style={{ color: P.mid, fontSize: 13 }}>No upcoming events.</div>}
-          {cal.slice(0, 6).map((ev, i) => (
-            <div key={i} style={{ ...row, borderLeft: `2px solid ${ev.isToday ? P.green : P.dim}` }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, color: ev.isToday ? P.green : P.text }}>{ev.title}</div>
-                <div style={{ fontSize: 11, color: P.dim, marginTop: 2 }}>{ev.time}</div>
-              </div>
-              <div style={{ fontSize: 11, color: ev.isToday ? P.green : P.dim }}>{ev.dateLabel}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+    </BoardShell>
   );
 }
 
-const sec = { fontSize: 10, fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', color: P.dim, marginBottom: 12 };
-const row = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', marginBottom: 6, background: P.surface, borderRadius: 6, paddingLeft: 12 };
-
-function LoadingState() {
+function Loading() {
   return (
-    <div style={{ minHeight: '100vh', background: P.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'monospace', color: P.mid }}>
-      loading board...
+    <div style={{ width:'100vw', height:'100vh', background:'#060B12', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'system-ui', color:'rgba(255,255,255,0.18)', fontSize:13 }}>
+      Loading
     </div>
   );
 }

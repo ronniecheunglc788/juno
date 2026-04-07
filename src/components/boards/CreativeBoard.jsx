@@ -1,208 +1,162 @@
-import WatchHistoryUpload from '../WatchHistoryUpload';
+import { useState, useMemo } from 'react';
+import BoardShell from '../BoardShell';
+import ForceGraph from '../ForceGraph';
+import NodeDetail from '../NodeDetail';
 
-const P = {
-  bg: '#F9F7F4', text: '#1A1A1A', mid: '#666', dim: '#AAA',
-  accent: '#7C3AED', accentLight: 'rgba(124,58,237,0.08)',
-  border: 'rgba(0,0,0,0.07)', card: '#fff',
+// ── Creative theme: stars, organic curves, particle field ─────────
+const THEME = {
+  bg:        '#070412',
+  glow:      'rgba(192,132,252,0.06)',
+  label:     'rgba(237,233,254,0.36)',
+  nodeShape: 'circle',
+  edgeStyle: 'bezier',
+  color: (type) => {
+    switch (type) {
+      case 'center':    return '#C084FC';
+      case 'project':   return '#818CF8';
+      case 'client':    return '#F472B6';
+      case 'instagram': return '#FBBF24';
+      case 'event':     return '#A5B4FC';
+      case 'note':      return '#3B1F5E';
+      default:          return '#2A1844';
+    }
+  },
+  initBackground: (W, H) => ({
+    stars: Array.from({ length: 80 }, () => ({
+      x: Math.random() * W, y: Math.random() * H,
+      r: Math.random() * 1.2 + 0.3,
+      a: Math.random(),
+    })),
+  }),
+  drawBackground: (ctx, W, H, frame, memo) => {
+    if (!memo) return;
+    memo.stars.forEach(s => {
+      const twinkle = Math.sin(frame * 0.018 + s.a * 10) * 0.3 + 0.7;
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(192,132,252,${s.a * 0.25 * twinkle})`;
+      ctx.fill();
+    });
+  },
 };
-
-const CREATIVE_KW = ['design', 'creative', 'brand', 'content', 'post', 'shoot', 'edit', 'video', 'photo',
-  'portfolio', 'client', 'freelance', 'project', 'brief', 'feedback', 'revision', 'draft', 'publish',
-  'launch', 'instagram', 'tiktok', 'youtube', 'newsletter', 'figma', 'pitch', 'deck', 'presentation',
-  'icarus', 'breeze', 'insight', 'outreach', 'moats', 'mirror'];
 
 const DRIVE_IGNORE = ['application/vnd.google-apps.folder'];
 
-function driveIcon(mimeType) {
-  if (mimeType.includes('spreadsheet') || mimeType.includes('xlsx')) return '📊';
-  if (mimeType.includes('document') || mimeType.includes('docx'))    return '📄';
-  if (mimeType.includes('presentation') || mimeType.includes('pptx')) return '📋';
-  if (mimeType.includes('json') || mimeType.includes('python') || mimeType.includes('script')) return '💻';
-  return '📁';
-}
-
-function isRelevant(text) {
-  return CREATIVE_KW.some(k => text.toLowerCase().includes(k));
-}
-
 function urgencyScore(em) {
-  const s = (em.subject + ' ' + em.snippet).toLowerCase();
-  let score = em.isUnread ? 3 : 0;
-  if (['urgent', 'asap', 'deadline', 'today', 'immediately'].some(k => s.includes(k))) score += 5;
-  if (['feedback', 'revision', 'review', 'approve'].some(k => s.includes(k))) score += 2;
-  return score;
+  const s = ((em.subject||'')+(em.snippet||'')).toLowerCase();
+  let sc = em.isUnread ? 2 : 0;
+  if (['urgent','asap','deadline','today'].some(k => s.includes(k))) sc += 4;
+  if (['feedback','revision','review'].some(k => s.includes(k))) sc += 2;
+  return sc;
+}
+
+function cleanFilename(name) {
+  return name.replace(/\.(fig|pdf|pptx|docx|xlsx|json|png|jpg)$/i, '').replace(/_/g, ' ');
 }
 
 export default function CreativeBoard({ data, loading }) {
-  if (loading) return <LoadingState />;
+  if (loading) return <Loading />;
+  const [selected, setSelected] = useState(null);
 
-  const [ytHistory, setYtHistory] = useState(data?.youtubeHistory || null);
-  const firstName = data?.user?.name?.split(' ')[0] || 'there';
-  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const { nodes, edges } = useMemo(() => {
+    const firstName = data?.user?.name?.split(' ')[0] || 'you';
+    const emails    = [...(data?.emails || [])].sort((a, b) => urgencyScore(b) - urgencyScore(a));
+    const drive     = (data?.drive || []).filter(f => !DRIVE_IGNORE.includes(f.mimeType)).slice(0, 8);
+    const notion    = (data?.notion || []).slice(0, 4);
+    const events    = (data?.calendar || []).filter(e => !e.isToday).slice(0, 5);
+    const ig        = data?.instagram;
 
-  const emails     = data?.emails || [];
-  const drive      = (data?.drive || []).filter(f => !DRIVE_IGNORE.includes(f.mimeType));
-  const notion     = data?.notion || [];
-  const cal        = data?.calendar || [];
-  const instagram  = data?.instagram;
+    const ns = [{ id: 'center', type: 'center', label: firstName, size: 20 }];
 
-  // Surface most relevant emails first
-  const topEmails  = [...emails]
-    .sort((a, b) => urgencyScore(b) - urgencyScore(a))
-    .slice(0, 4);
+    // Drive files / projects → right (stars), recent = more important
+    drive.forEach((f, i) => {
+      const angle = -Math.PI / 3.5 + (i / Math.max(drive.length-1, 1)) * (Math.PI * 0.7);
+      const imp   = Math.max(0, 1 - i / drive.length) * 0.75 + 0.1;
+      ns.push({
+        id: `file-${i}`, type: 'project', shape: 'star',
+        label: cleanFilename(f.name).slice(0, 18),
+        size: Math.round(8 + imp * 3), angle, dist: 300 + i*32, phase: i*0.65,
+        importance: imp,
+        statusLabel: 'Drive',
+        rawData: { ...f, source: 'Drive' },
+      });
+    });
 
-  // Drive files — relevant ones first
-  const relevantDrive = [
-    ...drive.filter(f => isRelevant(f.name)),
-    ...drive.filter(f => !isRelevant(f.name)),
-  ].slice(0, 8);
+    // Client emails → top-left (diamonds), urgency-sorted
+    emails.slice(0, 6).forEach((em, i) => {
+      const angle = Math.PI + Math.PI/3 - (i / Math.max(emails.length-1, 1)) * (Math.PI * 0.6);
+      const uScore = urgencyScore(em);
+      const imp   = Math.min(1, 0.3 + uScore * 0.12);
+      ns.push({
+        id: `em-${i}`, type: 'client', shape: 'diamond',
+        label: em.from?.split(' ').slice(0,2).join(' '),
+        size: em.isUnread ? 10 : 7,
+        angle, dist: 295 + i*26, phase: i*0.8,
+        importance: imp,
+        statusLabel: em.isUnread ? 'Needs reply' : null,
+        rawData: em,
+      });
+    });
 
-  // Idea cards: relevant drive + notion pages
-  const ideas = [
-    ...relevantDrive.slice(0, 5).map(f => ({ label: f.name, tag: driveIcon(f.mimeType), source: 'drive' })),
-    ...notion.slice(0, 3).map(n => ({ label: n.title, tag: '📝', source: 'notion', date: n.lastEdited })),
-  ];
+    // Instagram → left, large — importance scales with engagement
+    if (ig) {
+      const imp = ig.followers > 5000 ? 0.8 : ig.followers > 1000 ? 0.6 : 0.4;
+      ns.push({
+        id: 'ig', type: 'instagram', shape: 'circle',
+        label: `${(ig.followers / 1000).toFixed(1)}k`,
+        size: 14, angle: -Math.PI + Math.PI/8, dist: 240, phase: 0.4,
+        importance: imp,
+        statusLabel: `${ig.posts} posts`,
+        rawData: ig,
+      });
+    }
 
-  const hero = topEmails[0];
+    // Events → bottom-right
+    events.forEach((ev, i) => {
+      const angle = Math.PI / 2.5 + (i - events.length/2) * 0.25;
+      const imp   = Math.max(0, 1 - i / events.length) * 0.5;
+      ns.push({
+        id: `ev-${i}`, type: 'event', label: ev.title, size: 7,
+        angle, dist: 335 + i*24, phase: i*1.1,
+        importance: imp,
+        rawData: ev,
+      });
+    });
+
+    // Notes → top
+    notion.forEach((n, i) => {
+      const angle = -Math.PI * 0.6 + (i - notion.length/2) * 0.28;
+      ns.push({
+        id: `note-${i}`, type: 'note', label: n.title, size: 6,
+        angle, dist: 350 + i*20, phase: i*0.9,
+        importance: 0.2,
+        rawData: n,
+      });
+    });
+
+    const es = ns.slice(1).map((n, i) => ({
+      source: 0, target: i+1,
+      strong: n.type === 'project' || n.type === 'client',
+      rest: Math.round(310 - (n.importance ?? 0.3) * 200),
+      k: 0.007,
+    }));
+
+    return { nodes: ns, edges: es };
+  }, [data]);
 
   return (
-    <div style={{ minHeight: '100vh', background: P.bg, fontFamily: '"Georgia", serif', color: P.text }}>
-      {/* Header */}
-      <div style={{ borderBottom: `1px solid ${P.border}`, padding: '20px 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <div style={{ fontSize: 10, fontFamily: 'system-ui', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: P.accent, marginBottom: 4 }}>BREEZE · CREATIVE</div>
-          <div style={{ fontSize: 22, fontWeight: 400, fontStyle: 'italic' }}>Good to see you, {firstName}.</div>
-        </div>
-        <div style={{ fontSize: 12, fontFamily: 'system-ui', color: P.dim }}>{today}</div>
+    <BoardShell themeKey="creative" data={data} loading={loading}>
+      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+        <ForceGraph nodes={nodes} edges={edges} theme={THEME} onNodeClick={setSelected} />
+        <NodeDetail node={selected} accent="#C084FC" onClose={() => setSelected(null)} />
       </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', minHeight: 'calc(100vh - 73px)' }}>
-
-        {/* Left: main content */}
-        <div style={{ padding: '36px 40px', borderRight: `1px solid ${P.border}`, overflowY: 'auto' }}>
-
-          {/* Instagram stat strip */}
-          {instagram && (
-            <div style={{ display: 'flex', gap: 24, marginBottom: 36, padding: '16px 20px', background: P.card, border: `1px solid ${P.border}`, borderRadius: 12 }}>
-              <Stat label="Followers" value={instagram.followers.toLocaleString()} />
-              <Stat label="Following" value={instagram.following.toLocaleString()} />
-              <Stat label="Posts" value={instagram.posts} />
-              {instagram.bio && <div style={{ fontSize: 13, fontFamily: 'system-ui', color: P.mid, alignSelf: 'center', marginLeft: 8, fontStyle: 'italic' }}>"{instagram.bio}"</div>}
-            </div>
-          )}
-
-          {/* Instagram recent posts */}
-          {instagram?.recentPosts?.length > 0 && (
-            <>
-              <div style={secHeader}>RECENT POSTS</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12, marginBottom: 36 }}>
-                {instagram.recentPosts.map((p, i) => (
-                  <div key={i} style={{ background: P.card, border: `1px solid ${P.border}`, borderRadius: 10, overflow: 'hidden' }}>
-                    {p.url && <img src={p.url} alt="" style={{ width: '100%', height: 140, objectFit: 'cover', display: 'block' }} />}
-                    <div style={{ padding: '10px 12px' }}>
-                      {p.caption && <div style={{ fontSize: 13, marginBottom: 6, lineHeight: 1.4 }}>{p.caption}</div>}
-                      <div style={{ fontSize: 11, fontFamily: 'system-ui', color: P.dim }}>♥ {p.likes} · 💬 {p.comments}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-
-          {/* Top email needing attention */}
-          {hero && (
-            <>
-              <div style={secHeader}>NEEDS ATTENTION</div>
-              <div style={{ background: P.accentLight, border: `1px solid rgba(124,58,237,0.2)`, borderLeft: `4px solid ${P.accent}`, borderRadius: 12, padding: '20px 24px', marginBottom: 36 }}>
-                <div style={{ fontSize: 18, fontWeight: 400, lineHeight: 1.4, marginBottom: 8 }}>{hero.subject}</div>
-                <div style={{ fontSize: 13, fontFamily: 'system-ui', color: P.mid }}>{hero.from}</div>
-                {hero.snippet && <div style={{ fontSize: 13, color: P.mid, marginTop: 8, lineHeight: 1.6, fontStyle: 'italic' }}>"{hero.snippet.slice(0, 160)}"</div>}
-              </div>
-            </>
-          )}
-
-          {/* Drive + Notion ideas */}
-          {ideas.length > 0 && (
-            <>
-              <div style={secHeader}>YOUR FILES & NOTES</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                {ideas.map((item, i) => (
-                  <div key={i} style={{ background: P.card, border: `1px solid ${P.border}`, borderRadius: 10, padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                    <div style={{ fontSize: 20, flexShrink: 0 }}>{item.tag}</div>
-                    <div>
-                      <div style={{ fontSize: 13, fontFamily: 'system-ui', lineHeight: 1.4 }}>{item.label}</div>
-                      <div style={{ fontSize: 11, fontFamily: 'system-ui', color: P.dim, marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{item.source}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-
-          {!hero && ideas.length === 0 && !instagram && (
-            <div style={{ fontSize: 15, color: P.mid, fontStyle: 'italic', paddingTop: 20 }}>
-              Connect Instagram, Google Drive, or Gmail to populate your board.
-            </div>
-          )}
-        </div>
-
-        {/* Right: inbox + calendar */}
-        <div style={{ padding: '36px 28px', overflowY: 'auto' }}>
-
-          {/* Inbox */}
-          {topEmails.length > 0 && (
-            <>
-              <div style={secHeader}>INBOX</div>
-              {topEmails.map((em, i) => (
-                <div key={i} style={{ borderLeft: `2px solid ${em.isUnread ? P.accent : P.border}`, paddingLeft: 12, marginBottom: 16 }}>
-                  <div style={{ fontSize: 14, fontFamily: 'system-ui', fontWeight: em.isUnread ? 600 : 400, lineHeight: 1.3, marginBottom: 4 }}>{em.subject}</div>
-                  <div style={{ fontSize: 11, fontFamily: 'system-ui', color: P.dim }}>{em.from}</div>
-                </div>
-              ))}
-            </>
-          )}
-
-          {/* Calendar */}
-          <div style={{ ...secHeader, marginTop: topEmails.length ? 28 : 0 }}>COMING UP</div>
-          {cal.length === 0 && <div style={{ fontSize: 13, fontFamily: 'system-ui', color: P.dim }}>No upcoming events.</div>}
-          {cal.slice(0, 8).map((ev, i) => (
-            <div key={i} style={{ marginBottom: 14 }}>
-              {(i === 0 || cal[i - 1]?.dateLabel !== ev.dateLabel) && (
-                <div style={{ fontSize: 10, fontFamily: 'system-ui', fontWeight: 700, letterSpacing: '1px', color: ev.isToday ? P.accent : P.dim, textTransform: 'uppercase', margin: '14px 0 6px' }}>
-                  {ev.dateLabel}
-                </div>
-              )}
-              <div style={{ borderLeft: `2px solid ${ev.isToday ? P.accent : P.border}`, paddingLeft: 12 }}>
-                <div style={{ fontSize: 14 }}>{ev.title}</div>
-                <div style={{ fontSize: 11, fontFamily: 'system-ui', color: P.dim, marginTop: 2 }}>{ev.time}</div>
-              </div>
-            </div>
-          ))}
-          {/* YouTube watch history */}
-          <div style={{ marginTop: 28 }}>
-            <WatchHistoryUpload
-              userId={data?.user?.id}
-              initialData={ytHistory}
-              onUploaded={setYtHistory}
-            />
-          </div>
-        </div>
-      </div>
-    </div>
+    </BoardShell>
   );
 }
 
-function Stat({ label, value }) {
+function Loading() {
   return (
-    <div style={{ textAlign: 'center' }}>
-      <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'system-ui', color: P.text }}>{value}</div>
-      <div style={{ fontSize: 11, fontFamily: 'system-ui', color: P.dim, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</div>
+    <div style={{ width:'100vw', height:'100vh', background:'#070412', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'system-ui', color:'rgba(255,255,255,0.18)', fontSize:13 }}>
+      Loading
     </div>
   );
-}
-
-const secHeader = { fontSize: 10, fontFamily: 'system-ui', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: P.dim, marginBottom: 16 };
-
-function LoadingState() {
-  return <div style={{ minHeight: '100vh', background: P.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Georgia, serif', color: P.dim, fontStyle: 'italic' }}>Loading your board…</div>;
 }

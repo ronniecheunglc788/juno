@@ -107,11 +107,20 @@ export default function Onboard() {
   }
 
   async function handleConnect(appId) {
+    // Open window synchronously (on the user gesture) to avoid popup blockers,
+    // then navigate it once we have the redirect URL.
+    const win = window.open('', '_blank');
     try {
       const res = await fetch(`/api/connect?entityId=${user.entity_id}&app=${appId}`);
       const data = await res.json();
-      if (data.redirectUrl) window.open(data.redirectUrl, '_blank');
+      if (data.redirectUrl) {
+        win.location.href = data.redirectUrl;
+      } else {
+        win.close();
+        setError(data.error || 'Could not get connection URL');
+      }
     } catch (err) {
+      win.close();
       setError('Could not start connection: ' + err.message);
     }
   }

@@ -1,127 +1,148 @@
-const P = {
-  bg: '#FAFAFA', text: '#1A1A2E', mid: '#4A5568', dim: '#A0AEC0',
-  navy: '#1A1A2E', gold: '#C9A84C', green: '#38A169', red: '#E53E3E',
-  border: 'rgba(0,0,0,0.07)', card: '#fff',
+import { useState, useMemo } from 'react';
+import BoardShell from '../BoardShell';
+import ForceGraph from '../ForceGraph';
+import NodeDetail from '../NodeDetail';
+
+// ── Business theme: network graph, bezier, radial spokes ─────────
+const THEME = {
+  bg:        '#05080F',
+  glow:      'rgba(201,168,76,0.05)',
+  label:     'rgba(255,245,215,0.38)',
+  nodeShape: 'circle',
+  edgeStyle: 'bezier',
+  color: (type) => {
+    switch (type) {
+      case 'center':       return '#C9A84C';
+      case 'contact-warm': return '#22C55E';
+      case 'contact-mid':  return '#C9A84C';
+      case 'contact-cold': return '#EF4444';
+      case 'opp':          return '#D4A847';
+      case 'event':        return '#93C5FD';
+      default:             return '#2A3040';
+    }
+  },
+  drawBackground: (ctx, W, H) => {
+    const cx = W / 2, cy = H / 2;
+    const maxR = Math.sqrt(W * W + H * H);
+    ctx.strokeStyle = 'rgba(201,168,76,0.025)';
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i < 24; i++) {
+      const a = (i / 24) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + Math.cos(a) * maxR, cy + Math.sin(a) * maxR);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = 'rgba(201,168,76,0.02)';
+    for (let r = 120; r < maxR; r += 120) {
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+    }
+  },
 };
 
-function warmthColor(daysAgo) {
-  if (daysAgo < 3)  return '#38A169'; // very warm
-  if (daysAgo < 7)  return '#C9A84C'; // warm
-  if (daysAgo < 14) return '#ED8936'; // cooling
-  return '#E53E3E';                    // cold
+function daysAgoN(d) {
+  if (!d) return 999;
+  return Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
 }
 
-function warmthLabel(daysAgo) {
-  if (daysAgo < 1)  return 'Today';
-  if (daysAgo < 7)  return `${daysAgo}d ago`;
-  if (daysAgo < 30) return `${Math.floor(daysAgo / 7)}w ago`;
-  return `${Math.floor(daysAgo / 30)}mo ago`;
-}
-
-function buildPeople(emails) {
+function buildContacts(emails) {
   const map = {};
   emails.forEach(em => {
     const key = em.fromEmail || em.from;
-    if (!key || key.toLowerCase().includes('noreply') || key.toLowerCase().includes('no-reply')) return;
-    if (!map[key]) {
-      map[key] = { name: em.from, email: em.fromEmail, lastSubject: em.subject, date: em.date, count: 0 };
-    }
+    if (!key) return;
+    const lk = key.toLowerCase();
+    if (lk.includes('noreply') || lk.includes('no-reply') || lk.includes('notification')) return;
+    if (!map[key]) map[key] = { name: em.from, email: em.fromEmail, subject: em.subject, date: em.date, count: 0 };
     map[key].count++;
   });
-  return Object.values(map)
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .slice(0, 12);
+  return Object.values(map).sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 14);
 }
 
-const OPP_KW = ['opportunity', 'internship', 'role', 'position', 'offer', 'interview', 'recruiting', 'career', 'job', 'hiring'];
-function isOpportunity(email) {
-  return OPP_KW.some(k => (email.subject + ' ' + email.snippet).toLowerCase().includes(k));
+const OPP_KW = ['opportunity','internship','role','position','offer','interview','recruiting','career','job','hiring'];
+function isOpp(em) {
+  return OPP_KW.some(k => ((em.subject||'')+(em.snippet||'')).toLowerCase().includes(k));
 }
 
 export default function BusinessBoard({ data, loading }) {
-  if (loading) return <LoadingState />;
-  const firstName = data?.user?.name?.split(' ')[0] || 'there';
-  const people = buildPeople(data?.emails || []);
-  const opportunities = (data?.emails || []).filter(isOpportunity).slice(0, 6);
-  const cal = data?.calendar || [];
-  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  if (loading) return <Loading />;
+  const [selected, setSelected] = useState(null);
+
+  const { nodes, edges } = useMemo(() => {
+    const firstName = data?.user?.name?.split(' ')[0] || 'you';
+    const contacts  = buildContacts(data?.emails || []);
+    const opps      = (data?.emails || []).filter(isOpp).slice(0, 7);
+    const events    = (data?.calendar || []).filter(e => !e.isToday).slice(0, 5);
+
+    const ns = [{ id: 'center', type: 'center', label: firstName, size: 20 }];
+
+    // Contacts — spread all around, importance by recency
+    contacts.forEach((c, i) => {
+      const angle = (i / contacts.length) * Math.PI * 2 - Math.PI / 2;
+      const days  = daysAgoN(c.date);
+      const type  = days < 5 ? 'contact-warm' : days < 14 ? 'contact-mid' : 'contact-cold';
+      const size  = days < 5 ? 11 : days < 14 ? 8 : 6;
+      const warmth= days < 5 ? 'Active' : days < 14 ? `${days}d ago` : 'Cold';
+      const imp   = days < 5 ? 0.9 : days < 14 ? 0.55 : 0.2;
+      ns.push({
+        id: `c-${i}`, type, label: c.name?.split(' ')[0] || c.name,
+        size, angle, dist: 270 + (i % 4) * 60, phase: i * 0.55,
+        innerRing: true,
+        importance: imp,
+        statusLabel: warmth,
+        rawData: c,
+      });
+    });
+
+    // Opportunities — top cluster (diamonds), unread = higher importance
+    opps.forEach((op, i) => {
+      const angle = -Math.PI / 2 + (i - opps.length/2) * 0.26;
+      const imp   = op.isUnread ? 0.85 : 0.5;
+      ns.push({
+        id: `opp-${i}`, type: 'opp', shape: 'diamond',
+        label: op.from?.split(' ').slice(0,2).join(' '),
+        size: 9, angle, dist: 370 + i*24, phase: i*1.1,
+        importance: imp,
+        statusLabel: op.isUnread ? 'Unread' : null,
+        rawData: op,
+      });
+    });
+
+    // Events — lower-right, soonest = most important
+    events.forEach((ev, i) => {
+      const angle = Math.PI / 3 + (i - events.length/2) * 0.24;
+      const imp   = Math.max(0, 1 - i / events.length) * 0.5;
+      ns.push({
+        id: `ev-${i}`, type: 'event', label: ev.title, size: 7,
+        angle, dist: 340 + i*20, phase: i*0.9,
+        importance: imp,
+        rawData: ev,
+      });
+    });
+
+    const es = ns.slice(1).map((n, i) => ({
+      source: 0, target: i+1,
+      strong: n.type === 'contact-warm' || n.type === 'opp',
+      rest: Math.round(310 - (n.importance ?? 0.3) * 200),
+      k: 0.007,
+    }));
+
+    return { nodes: ns, edges: es };
+  }, [data]);
 
   return (
-    <div style={{ minHeight: '100vh', background: P.bg, fontFamily: 'system-ui, sans-serif', color: P.text }}>
-      {/* Header */}
-      <div style={{ background: P.navy, padding: '20px 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <div style={{ fontSize: 10, letterSpacing: '2px', textTransform: 'uppercase', color: 'rgba(201,168,76,0.7)', marginBottom: 4 }}>BREEZE · BUSINESS</div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>Hey {firstName} —</div>
-        </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>{today}</div>
-          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>{cal.length} upcoming · {people.length} contacts</div>
-        </div>
+    <BoardShell themeKey="business" data={data} loading={loading}>
+      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+        <ForceGraph nodes={nodes} edges={edges} theme={THEME} onNodeClick={setSelected} />
+        <NodeDetail node={selected} accent="#C9A84C" onClose={() => setSelected(null)} />
       </div>
-
-      {/* Calendar strip */}
-      {cal.length > 0 && (
-        <div style={{ background: '#fff', borderBottom: `1px solid ${P.border}`, padding: '14px 40px', display: 'flex', gap: 12, overflowX: 'auto' }}>
-          {cal.slice(0, 6).map((ev, i) => (
-            <div key={i} style={{ flexShrink: 0, background: ev.isToday ? P.navy : P.bg, borderRadius: 10, padding: '10px 16px', border: `1px solid ${ev.isToday ? P.navy : P.border}`, minWidth: 160 }}>
-              <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '1px', color: ev.isToday ? P.gold : P.dim, textTransform: 'uppercase', marginBottom: 4 }}>{ev.dateLabel}</div>
-              <div style={{ fontSize: 13, fontWeight: 500, color: ev.isToday ? '#fff' : P.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ev.title}</div>
-              <div style={{ fontSize: 11, color: ev.isToday ? 'rgba(255,255,255,0.5)' : P.dim, marginTop: 2 }}>{ev.time}</div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Body */}
-      <div style={{ padding: '32px 40px' }}>
-        {/* People section */}
-        <div style={secHeader}>PEOPLE</div>
-        {people.length === 0 && <Empty>Connect Gmail to see your contacts.</Empty>}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12, marginBottom: 36 }}>
-          {people.map((p, i) => {
-            const daysAgo = p.date ? Math.floor((Date.now() - new Date(p.date).getTime()) / 86400000) : 999;
-            const color = warmthColor(daysAgo);
-            return (
-              <div key={i} style={{ background: P.card, border: `1px solid ${P.border}`, borderRadius: 12, padding: '16px 18px', borderTop: `3px solid ${color}` }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: `${color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color }}>
-                    {p.name?.[0]?.toUpperCase() || '?'}
-                  </div>
-                  <div style={{ fontSize: 11, color, fontWeight: 600 }}>{warmthLabel(daysAgo)}</div>
-                </div>
-                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
-                <div style={{ fontSize: 11, color: P.dim, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 6 }}>{p.email}</div>
-                <div style={{ fontSize: 12, color: P.mid, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.lastSubject}</div>
-                <div style={{ fontSize: 11, color: P.dim, marginTop: 4 }}>{p.count} email{p.count !== 1 ? 's' : ''}</div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Opportunities */}
-        {opportunities.length > 0 && (
-          <>
-            <div style={secHeader}>OPPORTUNITIES</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 12 }}>
-              {opportunities.map((op, i) => (
-                <div key={i} style={{ background: P.card, border: `1px solid ${P.border}`, borderLeft: `3px solid ${P.gold}`, borderRadius: 10, padding: '14px 18px' }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{op.subject}</div>
-                  <div style={{ fontSize: 12, color: P.mid }}>{op.from}</div>
-                  {op.snippet && <div style={{ fontSize: 12, color: P.dim, marginTop: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{op.snippet}</div>}
-                  <div style={{ fontSize: 11, color: P.dim, marginTop: 6 }}>{op.date}</div>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-    </div>
+    </BoardShell>
   );
 }
 
-const secHeader = { fontSize: 10, fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', color: P.dim, marginBottom: 14 };
-function Empty({ children }) { return <div style={{ fontSize: 13, color: P.dim, marginBottom: 28 }}>{children}</div>; }
-function LoadingState() {
-  return <div style={{ minHeight: '100vh', background: P.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'system-ui', color: P.dim }}>Loading…</div>;
+function Loading() {
+  return (
+    <div style={{ width:'100vw', height:'100vh', background:'#05080F', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'system-ui', color:'rgba(255,255,255,0.18)', fontSize:13 }}>
+      Loading
+    </div>
+  );
 }
