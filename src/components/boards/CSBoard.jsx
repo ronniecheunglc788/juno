@@ -149,8 +149,11 @@ export default function CSBoard({ data, loading }) {
 
 function Loading() {
   return (
-    <div style={{ width:'100vw', height:'100vh', background:'#060B12', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'system-ui', color:'rgba(255,255,255,0.18)', fontSize:13 }}>
-      Loading
+    <div style={{ width:'100vw', height:'100vh', background:'#060B12', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'DM Sans',system-ui,sans-serif" }}>
+      <div style={{ textAlign:'center' }}>
+        <div style={{ fontSize:9, letterSpacing:'2.5px', textTransform:'uppercase', color:'rgba(88,166,255,0.3)', marginBottom:10 }}>breeze</div>
+        <div style={{ fontSize:12, color:'rgba(255,255,255,0.14)', fontWeight:300, letterSpacing:'0.3px' }}>Loading your context…</div>
+      </div>
     </div>
   );
 }

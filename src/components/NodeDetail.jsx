@@ -1,4 +1,5 @@
-const FONT = "'DM Sans','Inter',system-ui,sans-serif";
+const FONT  = "'DM Sans','Inter',system-ui,sans-serif";
+const SERIF = "'Playfair Display',Georgia,serif";
 
 export default function NodeDetail({ node, accent, onClose }) {
   if (!node) return null;
@@ -6,39 +7,66 @@ export default function NodeDetail({ node, accent, onClose }) {
   return (
     <div style={{
       position:             'absolute',
-      bottom:               28,
-      right:                24,
-      width:                292,
-      background:           'rgba(5,7,12,0.96)',
-      backdropFilter:       'blur(28px)',
-      WebkitBackdropFilter: 'blur(28px)',
-      border:               `1px solid rgba(255,255,255,0.07)`,
-      borderTop:            `2px solid ${accent}55`,
-      borderRadius:         14,
-      padding:              '22px 22px 20px',
-      boxShadow:            '0 32px 80px rgba(0,0,0,0.7)',
+      bottom:               32,
+      right:                28,
+      width:                300,
+      background:           'rgba(4,6,11,0.92)',
+      backdropFilter:       'blur(32px)',
+      WebkitBackdropFilter: 'blur(32px)',
+      border:               '1px solid rgba(255,255,255,0.06)',
+      borderTop:            `2px solid ${accent}44`,
+      borderRadius:         16,
+      padding:              '24px 24px 22px',
+      boxShadow:            `0 40px 100px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,255,255,0.02), inset 0 1px 0 rgba(255,255,255,0.04)`,
       fontFamily:           FONT,
       zIndex:               100,
-      animation:            'nodeFadeIn 0.2s ease',
+      animation:            'nodeFadeIn 0.18s ease',
+      overflow:             'hidden',
     }}>
 
+      {/* Ambient glow matching accent */}
+      <div style={{
+        position:     'absolute',
+        top:          -30,
+        right:        -30,
+        width:        140,
+        height:       140,
+        borderRadius: '50%',
+        background:   `radial-gradient(circle, ${accent}0c 0%, transparent 70%)`,
+        pointerEvents:'none',
+      }} />
+
       {/* Header row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, position: 'relative' }}>
         <div style={{
-          fontSize: 9, fontWeight: 500, letterSpacing: '1.4px',
-          textTransform: 'uppercase', color: `${accent}99`,
+          fontSize:      9,
+          fontWeight:    500,
+          letterSpacing: '1.6px',
+          textTransform: 'uppercase',
+          color:         `${accent}80`,
         }}>
           {labelForType(node.type)}
         </div>
         <button
           onClick={onClose}
           style={{
-            background: 'rgba(255,255,255,0.05)', border: 'none',
-            borderRadius: '50%', width: 22, height: 22,
-            cursor: 'pointer', color: 'rgba(255,255,255,0.35)',
-            fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            lineHeight: 1, padding: 0,
+            background:     'rgba(255,255,255,0.06)',
+            border:         '1px solid rgba(255,255,255,0.08)',
+            borderRadius:   '50%',
+            width:          22,
+            height:         22,
+            cursor:         'pointer',
+            color:          'rgba(255,255,255,0.3)',
+            fontSize:       14,
+            display:        'flex',
+            alignItems:     'center',
+            justifyContent: 'center',
+            lineHeight:     1,
+            padding:        0,
+            transition:     'background 0.15s, color 0.15s',
           }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'rgba(255,255,255,0.3)'; }}
         >
           ×
         </button>
@@ -50,32 +78,38 @@ export default function NodeDetail({ node, accent, onClose }) {
 }
 
 function NodeContent({ node, accent }) {
-  const d     = node.rawData || {};
-  const title = d.name || d.subject || d.title || node.label || '—';
+  const d      = node.rawData || {};
+  const title  = d.name || d.subject || d.title || node.label || '—';
   const fields = getFields(node, d).filter(Boolean);
 
   return (
-    <div>
+    <div style={{ position: 'relative' }}>
       <div style={{
-        fontSize: 15, fontWeight: 500, color: 'rgba(255,255,255,0.88)',
-        lineHeight: 1.4, marginBottom: fields.length ? 16 : 0,
-        fontFamily: "'DM Sans','Inter',system-ui,sans-serif",
+        fontSize:     15,
+        fontWeight:   400,
+        color:        'rgba(255,255,255,0.85)',
+        lineHeight:   1.45,
+        marginBottom: fields.length ? 18 : 0,
+        fontFamily:   FONT,
       }}>
         {title}
       </div>
 
       {fields.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
           {fields.map((f, i) => (
             <div key={i}>
               <div style={{
-                fontSize: 9, fontWeight: 500, letterSpacing: '1.2px',
-                textTransform: 'uppercase', color: 'rgba(255,255,255,0.2)',
-                marginBottom: 3,
+                fontSize:      9,
+                fontWeight:    500,
+                letterSpacing: '1.4px',
+                textTransform: 'uppercase',
+                color:         'rgba(255,255,255,0.18)',
+                marginBottom:  4,
               }}>
                 {f.label}
               </div>
-              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>
+              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', lineHeight: 1.55 }}>
                 {f.value}
               </div>
             </div>
@@ -85,12 +119,27 @@ function NodeContent({ node, accent }) {
 
       {node.statusLabel && (
         <div style={{
-          display: 'inline-block', marginTop: 16,
-          fontSize: 10, fontWeight: 500, letterSpacing: '0.4px',
-          padding: '4px 11px', borderRadius: 20,
-          background: `${accent}12`, color: `${accent}cc`,
-          border: `1px solid ${accent}28`,
+          display:      'inline-flex',
+          alignItems:   'center',
+          gap:          5,
+          marginTop:    18,
+          fontSize:     10,
+          fontWeight:   500,
+          letterSpacing:'0.4px',
+          padding:      '4px 11px',
+          borderRadius: 20,
+          background:   `${accent}10`,
+          color:        `${accent}cc`,
+          border:       `1px solid ${accent}22`,
         }}>
+          <span style={{
+            width:        5,
+            height:       5,
+            borderRadius: '50%',
+            background:   `${accent}cc`,
+            display:      'inline-block',
+            boxShadow:    `0 0 4px ${accent}80`,
+          }} />
           {node.statusLabel}
         </div>
       )}
@@ -156,11 +205,11 @@ function labelForType(type) {
 function relativeDate(str) {
   if (!str) return '—';
   const days = Math.floor((Date.now() - new Date(str).getTime()) / 86400000);
-  if (days < 0)  return 'Upcoming';
+  if (days < 0)   return 'Upcoming';
   if (days === 0) return 'Today';
   if (days === 1) return 'Yesterday';
-  if (days < 7)  return `${days}d ago`;
-  if (days < 30) return `${Math.floor(days/7)}w ago`;
+  if (days < 7)   return `${days}d ago`;
+  if (days < 30)  return `${Math.floor(days/7)}w ago`;
   return `${Math.floor(days/30)}mo ago`;
 }
 

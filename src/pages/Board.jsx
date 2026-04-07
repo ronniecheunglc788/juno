@@ -33,16 +33,16 @@ function UserNav({ user, onLogout }) {
 
   return (
     <div style={{
-      height:          44,
+      height:          50,
       flexShrink:      0,
       display:         'flex',
       alignItems:      'center',
       justifyContent:  'space-between',
-      padding:         '0 22px',
+      padding:         '0 26px',
       borderBottom:    '1px solid rgba(255,255,255,0.04)',
-      background:      'rgba(4,6,12,0.99)',
-      backdropFilter:  'blur(24px)',
-      WebkitBackdropFilter: 'blur(24px)',
+      background:      'rgba(3,5,10,0.99)',
+      backdropFilter:  'blur(32px)',
+      WebkitBackdropFilter: 'blur(32px)',
       zIndex:          50,
       position:        'relative',
       fontFamily:      "'DM Sans','Inter',system-ui,sans-serif",
@@ -50,34 +50,35 @@ function UserNav({ user, onLogout }) {
 
       {/* Wordmark */}
       <div style={{
-        fontSize:      11,
+        fontSize:      10,
         fontWeight:    400,
-        letterSpacing: '5px',
-        color:         'rgba(255,255,255,0.22)',
+        letterSpacing: '5.5px',
+        color:         'rgba(255,255,255,0.2)',
         textTransform: 'uppercase',
-        fontFamily:    'system-ui,-apple-system,sans-serif',
         userSelect:    'none',
       }}>
         breeze
       </div>
 
       {/* Right side */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, position: 'relative' }}>
         {/* Archetype pill */}
         <div style={{
-          fontSize:      10,
+          fontSize:      9,
           fontWeight:    500,
-          letterSpacing: '0.6px',
+          letterSpacing: '1.4px',
           textTransform: 'uppercase',
-          color:         `${color}cc`,
-          padding:       '2px 8px',
-          fontFamily:    'system-ui,-apple-system,sans-serif',
+          color:         `${color}70`,
+          padding:       '3px 10px',
+          borderRadius:  20,
+          background:    `${color}0a`,
+          border:        `1px solid ${color}16`,
         }}>
           {label}
         </div>
 
         {/* Divider */}
-        <div style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.08)' }} />
+        <div style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.07)' }} />
 
         {/* Avatar button */}
         <div
@@ -85,21 +86,22 @@ function UserNav({ user, onLogout }) {
           style={{
             display:        'flex',
             alignItems:     'center',
-            gap:            7,
-            padding:        '4px 8px 4px 4px',
-            borderRadius:   20,
+            gap:            8,
+            padding:        '4px 10px 4px 4px',
+            borderRadius:   22,
             cursor:         'pointer',
             background:     menuOpen ? 'rgba(255,255,255,0.05)' : 'transparent',
-            transition:     'background 0.15s',
+            border:         menuOpen ? '1px solid rgba(255,255,255,0.07)' : '1px solid transparent',
+            transition:     'background 0.15s, border-color 0.15s',
             userSelect:     'none',
           }}
         >
           <div style={{
-            width:          26,
-            height:         26,
+            width:          28,
+            height:         28,
             borderRadius:   '50%',
-            background:     `${color}18`,
-            border:         `1px solid ${color}30`,
+            background:     `${color}14`,
+            border:         `1px solid ${color}28`,
             display:        'flex',
             alignItems:     'center',
             justifyContent: 'center',
@@ -108,13 +110,13 @@ function UserNav({ user, onLogout }) {
             color:          `${color}cc`,
             letterSpacing:  '0.5px',
             flexShrink:     0,
+            boxShadow:      `0 0 10px ${color}14`,
           }}>
             {initials}
           </div>
           <span style={{
-            fontSize:   12,
-            color:      'rgba(255,255,255,0.4)',
-            fontFamily: 'system-ui,-apple-system,sans-serif',
+            fontSize: 13,
+            color:    'rgba(255,255,255,0.38)',
           }}>
             {user?.name?.split(' ')[0] || ''}
           </span>
@@ -125,23 +127,24 @@ function UserNav({ user, onLogout }) {
           <>
             <div onClick={() => setMenuOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 99 }} />
             <div style={{
-              position:     'absolute',
-              top:          42,
-              right:        0,
-              width:        160,
-              background:   'rgba(8,10,18,0.98)',
-              border:       '1px solid rgba(255,255,255,0.07)',
-              borderRadius: 10,
-              boxShadow:    '0 12px 40px rgba(0,0,0,0.6)',
-              zIndex:       100,
-              overflow:     'hidden',
-              backdropFilter: 'blur(24px)',
+              position:        'absolute',
+              top:             48,
+              right:           0,
+              width:           168,
+              background:      'rgba(6,9,16,0.97)',
+              border:          '1px solid rgba(255,255,255,0.07)',
+              borderRadius:    12,
+              boxShadow:       '0 20px 60px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.04)',
+              zIndex:          100,
+              overflow:        'hidden',
+              backdropFilter:  'blur(32px)',
+              WebkitBackdropFilter: 'blur(32px)',
             }}>
               <button onClick={() => { setMenuOpen(false); navigate('/join?manage=true'); }} style={menuItemStyle}>
                 Connect apps
               </button>
-              <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }} />
-              <button onClick={() => { setMenuOpen(false); onLogout(); }} style={{ ...menuItemStyle, color: 'rgba(255,80,80,0.6)' }}>
+              <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '0 12px' }} />
+              <button onClick={() => { setMenuOpen(false); onLogout(); }} style={{ ...menuItemStyle, color: 'rgba(255,80,80,0.55)' }}>
                 Log out
               </button>
             </div>
@@ -155,14 +158,15 @@ function UserNav({ user, onLogout }) {
 const menuItemStyle = {
   display:    'block',
   width:      '100%',
-  padding:    '11px 16px',
+  padding:    '12px 16px',
   background: 'transparent',
   border:     'none',
-  color:      'rgba(255,255,255,0.65)',
+  color:      'rgba(255,255,255,0.58)',
   fontSize:   13,
-  fontFamily: 'system-ui,-apple-system,sans-serif',
+  fontFamily: "'DM Sans','Inter',system-ui,sans-serif",
   textAlign:  'left',
   cursor:     'pointer',
+  letterSpacing: '0.1px',
 };
 
 export default function Board() {

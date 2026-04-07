@@ -33,24 +33,23 @@ function AmbientLight() {
     if (!el) return;
 
     function onMove(e) {
-      const r = el.getBoundingClientRect();
       pos.current = {
-        x: (e.clientX - r.left) / r.width,
-        y: (e.clientY - r.top)  / r.height,
+        x: e.clientX / window.innerWidth,
+        y: e.clientY / window.innerHeight,
       };
     }
 
     function animate() {
-      cur.current.x += (pos.current.x - cur.current.x) * 0.06;
-      cur.current.y += (pos.current.y - cur.current.y) * 0.06;
-      const x = (cur.current.x * 100).toFixed(2);
-      const y = (cur.current.y * 100).toFixed(2);
-      if (el) {
-        el.style.background = `
-          radial-gradient(ellipse 70% 55% at ${x}% ${y}%, rgba(180,160,255,0.11) 0%, transparent 65%),
-          radial-gradient(ellipse 50% 40% at ${100-x}% ${100-y}%, rgba(120,180,255,0.07) 0%, transparent 60%)
-        `;
-      }
+      cur.current.x += (pos.current.x - cur.current.x) * 0.05;
+      cur.current.y += (pos.current.y - cur.current.y) * 0.05;
+      const x  = (cur.current.x * 100).toFixed(1);
+      const y  = (cur.current.y * 100).toFixed(1);
+      const xi = (100 - cur.current.x * 100).toFixed(1);
+      const yi = (100 - cur.current.y * 100).toFixed(1);
+      el.style.background = `
+        radial-gradient(ellipse 65% 50% at ${x}% ${y}%, rgba(160,130,255,0.18) 0%, transparent 60%),
+        radial-gradient(ellipse 55% 45% at ${xi}% ${yi}%, rgba(100,160,255,0.10) 0%, transparent 55%)
+      `;
       raf.current = requestAnimationFrame(animate);
     }
 
@@ -66,11 +65,10 @@ function AmbientLight() {
     <div
       ref={ref}
       style={{
-        position:   'fixed',
-        inset:      0,
+        position:      'fixed',
+        inset:         0,
         pointerEvents: 'none',
-        zIndex:     0,
-        transition: 'opacity 0.4s',
+        zIndex:        1,
       }}
     />
   );
