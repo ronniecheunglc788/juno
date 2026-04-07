@@ -21,7 +21,10 @@ const ARCH_COLOR = {
   creative: '#C084FC',
 };
 
-function UserNav({ user }) {
+function UserNav({ user, onLogout }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const navigate = useNavigate();
+
   const initials = (user?.name || '?')
     .split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase();
   const arch  = user?.archetype || 'engineer';
@@ -58,7 +61,7 @@ function UserNav({ user }) {
       </div>
 
       {/* User identity */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, position: 'relative' }}>
         {/* Archetype badge */}
         <div style={{
           fontSize:      10,
@@ -85,30 +88,85 @@ function UserNav({ user }) {
           {user?.name?.split(' ')[0] || ''}
         </div>
 
-        {/* Avatar */}
-        <div style={{
-          width:        30,
-          height:       30,
-          borderRadius: '50%',
-          background:   `${color}22`,
-          border:       `1px solid ${color}44`,
-          display:      'flex',
-          alignItems:   'center',
-          justifyContent:'center',
-          fontSize:     11,
-          fontWeight:   600,
-          color:        color,
-          fontFamily:   'system-ui,-apple-system,sans-serif',
-          letterSpacing:'0.5px',
-          userSelect:   'none',
-          flexShrink:   0,
-        }}>
+        {/* Avatar — click to open menu */}
+        <div
+          onClick={() => setMenuOpen(o => !o)}
+          style={{
+            width:        30,
+            height:       30,
+            borderRadius: '50%',
+            background:   `${color}22`,
+            border:       `1px solid ${color}44`,
+            display:      'flex',
+            alignItems:   'center',
+            justifyContent:'center',
+            fontSize:     11,
+            fontWeight:   600,
+            color:        color,
+            fontFamily:   'system-ui,-apple-system,sans-serif',
+            letterSpacing:'0.5px',
+            userSelect:   'none',
+            flexShrink:   0,
+            cursor:       'pointer',
+          }}
+        >
           {initials}
         </div>
+
+        {/* Dropdown menu */}
+        {menuOpen && (
+          <>
+            {/* Backdrop to close */}
+            <div
+              onClick={() => setMenuOpen(false)}
+              style={{ position: 'fixed', inset: 0, zIndex: 99 }}
+            />
+            <div style={{
+              position:     'absolute',
+              top:          38,
+              right:        0,
+              width:        170,
+              background:   'rgba(10,13,22,0.97)',
+              border:       '1px solid rgba(255,255,255,0.08)',
+              borderRadius: 10,
+              boxShadow:    '0 8px 32px rgba(0,0,0,0.5)',
+              zIndex:       100,
+              overflow:     'hidden',
+              backdropFilter: 'blur(20px)',
+            }}>
+              <button
+                onClick={() => { setMenuOpen(false); navigate('/join'); }}
+                style={menuItemStyle}
+              >
+                Connect apps
+              </button>
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }} />
+              <button
+                onClick={() => { setMenuOpen(false); onLogout(); }}
+                style={{ ...menuItemStyle, color: 'rgba(255,100,100,0.7)' }}
+              >
+                Log out
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
 }
+
+const menuItemStyle = {
+  display:    'block',
+  width:      '100%',
+  padding:    '11px 16px',
+  background: 'transparent',
+  border:     'none',
+  color:      'rgba(255,255,255,0.65)',
+  fontSize:   13,
+  fontFamily: 'system-ui,-apple-system,sans-serif',
+  textAlign:  'left',
+  cursor:     'pointer',
+};
 
 export default function Board() {
   const navigate = useNavigate();
@@ -131,11 +189,16 @@ export default function Board() {
       .finally(() => setLoading(false));
   }, [navigate]);
 
+  function handleLogout() {
+    localStorage.removeItem('breeze_user');
+    navigate('/join');
+  }
+
   if (error) return <ErrorState error={error} />;
   if (!user)  return null;
 
   const arch  = user.archetype;
-  const Board =
+  const BoardComponent =
     arch === 'premed'   ? PremedBoard   :
     arch === 'business' ? BusinessBoard :
     arch === 'creative' ? CreativeBoard :
@@ -143,9 +206,9 @@ export default function Board() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
-      <UserNav user={user} />
+      <UserNav user={user} onLogout={handleLogout} />
       <div style={{ flex: 1, overflow: 'hidden' }}>
-        <Board data={data} loading={loading} />
+        <BoardComponent data={data} loading={loading} />
       </div>
     </div>
   );
