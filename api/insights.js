@@ -1,4 +1,3 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { setCORSHeaders } from './_lib/validate.js';
 
 export default async function handler(req, res) {
@@ -7,7 +6,7 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  if (!process.env.GEMINI_API_KEY) {
+  if (!process.env.GROQ_API_KEY) {
     return res.status(500).json({ error: 'AI not configured' });
   }
 
@@ -17,7 +16,6 @@ export default async function handler(req, res) {
   const name      = data.user?.name?.split(' ')[0] || 'Student';
   const archetype = data.user?.archetype || 'engineer';
 
-  // Format calendar — handle both new (startRaw) and old (dateLabel/time) formats
   const events = (data.calendar || []).slice(0, 8).map(e => {
     let when = e.dateLabel || '';
     let time = e.time || '';
@@ -52,8 +50,8 @@ export default async function handler(req, res) {
 
 ${archetypeContext}
 
-Return ONLY a valid JSON array with exactly 3 objects, nothing else:
-[{"type":"email","title":"short title","body":"1-2 sentences"},{"type":"calendar","title":"...","body":"..."},{"type":"general","title":"...","body":"..."}]
+Return ONLY a valid JSON array with exactly 3 objects, nothing else before or after:
+[{"type":"email","title":"short title under 8 words","body":"1-2 specific sentences"},{"type":"calendar","title":"...","body":"..."},{"type":"general","title":"...","body":"..."}]
 
 Valid types: email, calendar, github, general
 
@@ -75,18 +73,31 @@ NOTION PAGES:
 ${notionPages.join('\n') || '- none'}`;
 
   try {
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method:  'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+        'Content-Type':  'application/json',
+      },
+      body: JSON.stringify({
+        model:       'llama-3.3-70b-versatile',
+        messages:    [{ role: 'user', content: prompt }],
+        temperature: 0.6,
+        max_tokens:  600,
+      }),
+    });
 
-    const result = await model.generateContent(prompt);
-    const text   = result.response.text().trim();
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error(`Groq ${response.status}: ${err.slice(0, 200)}`);
+    }
 
-    // Strip markdown fences if Gemini wraps it anyway
-    const clean = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+    const groqData = await response.json();
+    const text     = groqData.choices?.[0]?.message?.content?.trim() || '';
 
-    // Extract JSON array even if there's extra text around it
-    const match = clean.match(/\[[\s\S]*\]/);
-    if (!match) throw new Error(`No JSON array in response: ${clean.slice(0, 200)}`);
+    // Extract JSON array from response
+    const match = text.match(/\[[\s\S]*\]/);
+    if (!match) throw new Error(`No JSON array in response: ${text.slice(0, 200)}`);
 
     const insights = JSON.parse(match[0]);
     if (!Array.isArray(insights)) throw new Error('Response is not an array');
@@ -94,7 +105,6 @@ ${notionPages.join('\n') || '- none'}`;
     return res.status(200).json({ insights: insights.slice(0, 3) });
   } catch (err) {
     console.error('[insights error]', err);
-    // Return the real error message so we can debug from the UI
     return res.status(500).json({ error: err.message || 'Failed to generate insights' });
   }
 }
