@@ -33,86 +33,78 @@ export default function BoardShell({ children, data, themeKey }) {
     return acc;
   }, {});
 
-  return (
-    <div style={{
-      display:    'flex',
-      height:     '100%',
-      width:      '100%',
-      overflow:   'hidden',
-      fontFamily: FONT,
-    }}>
+  const empty = todayEvents.length === 0 && unread.length === 0 && Object.keys(groups).length === 0;
 
-      {/* ── Left sidebar ─────────────────────────────────────────── */}
+  return (
+    <div style={{ display: 'flex', height: '100%', width: '100%', overflow: 'hidden', fontFamily: FONT }}>
+
+      {/* ── Sidebar ───────────────────────────────────────────────── */}
       <div style={{
-        width:         232,
+        width:         224,
         flexShrink:    0,
-        background:    '#070B12',
-        borderRight:   '1px solid rgba(255,255,255,0.05)',
+        background:    'rgba(5,7,12,0.98)',
+        borderRight:   '1px solid rgba(255,255,255,0.04)',
         display:       'flex',
         flexDirection: 'column',
         overflow:      'hidden',
       }}>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '22px 20px' }}>
+        {/* Scrollable content */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '24px 20px 16px' }}>
 
-          {(todayEvents.length > 0 || unread.length > 0) ? (
+          {empty ? (
+            <div style={{ color: 'rgba(255,255,255,0.14)', fontSize: 13, lineHeight: 1.7, paddingTop: 4 }}>
+              Connect Calendar &amp; Gmail to populate this panel.
+            </div>
+          ) : (
             <>
               {todayEvents.length > 0 && (
-                <Group label="Today" accent={accent}>
+                <Section label="Today" accent={accent}>
                   {todayEvents.map((ev, i) => (
-                    <SideEvent key={i} accent={accent} title={ev.title} meta={ev.time} />
+                    <EventRow key={i} title={ev.title} meta={ev.time} accent={accent} />
                   ))}
-                </Group>
+                </Section>
               )}
+
               {unread.length > 0 && (
-                <Group label="Unread" accent={accent}>
+                <Section label="Unread" accent={accent}>
                   {unread.map((em, i) => (
-                    <SideEmail key={i} accent={accent} from={em.from} subject={em.subject} />
+                    <EmailRow key={i} from={em.from} subject={em.subject} accent={accent} />
                   ))}
-                </Group>
+                </Section>
               )}
-            </>
-          ) : (
-            <div style={{ color: 'rgba(255,255,255,0.14)', fontSize: 13, paddingTop: 8, lineHeight: 1.7 }}>
-              Nothing on for today.
-            </div>
-          )}
 
-          {Object.keys(groups).length > 0 && (
-            <div style={{ marginTop: 4 }}>
               {Object.entries(groups).map(([day, evs]) => (
-                <Group key={day} label={day} accent={accent}>
+                <Section key={day} label={day} accent={accent}>
                   {evs.map((ev, i) => (
-                    <SideEvent key={i} accent={accent} title={ev.title} meta={ev.time} />
+                    <EventRow key={i} title={ev.title} meta={ev.time} accent={accent} />
                   ))}
-                </Group>
+                </Section>
               ))}
-            </div>
-          )}
-
-          {todayEvents.length === 0 && unread.length === 0 && Object.keys(groups).length === 0 && (
-            <div style={{ color: 'rgba(255,255,255,0.14)', fontSize: 13, marginTop: 8, lineHeight: 1.7 }}>
-              Connect Calendar and Gmail to populate this panel.
-            </div>
+            </>
           )}
         </div>
 
-        {/* Connected apps — pinned bottom */}
-        <div style={{ padding: '14px 20px 18px', borderTop: '1px solid rgba(255,255,255,0.05)', flexShrink: 0 }}>
-          <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '1.2px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.16)', marginBottom: 10 }}>
+        {/* Connected apps */}
+        <div style={{ padding: '14px 20px 20px', borderTop: '1px solid rgba(255,255,255,0.04)', flexShrink: 0 }}>
+          <div style={{
+            fontSize: 9, fontWeight: 500, letterSpacing: '1.4px',
+            textTransform: 'uppercase', color: 'rgba(255,255,255,0.14)',
+            marginBottom: 10,
+          }}>
             Connected
           </div>
           {connected.length === 0 ? (
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.14)' }}>No apps connected</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.12)' }}>No apps connected</div>
           ) : (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
               {connected.map((app, i) => (
                 <span key={i} style={{
-                  fontSize: 11, fontWeight: 400,
-                  padding: '3px 9px', borderRadius: 20,
-                  background: 'rgba(255,255,255,0.04)',
-                  color: 'rgba(255,255,255,0.3)',
-                  border: '1px solid rgba(255,255,255,0.07)',
+                  fontSize: 10, fontWeight: 400,
+                  padding: '3px 8px', borderRadius: 20,
+                  background: 'rgba(255,255,255,0.03)',
+                  color: 'rgba(255,255,255,0.25)',
+                  border: '1px solid rgba(255,255,255,0.06)',
                 }}>
                   {fmt(app)}
                 </span>
@@ -122,7 +114,7 @@ export default function BoardShell({ children, data, themeKey }) {
         </div>
       </div>
 
-      {/* ── Center: graph ────────────────────────────────────────── */}
+      {/* ── Graph ─────────────────────────────────────────────────── */}
       <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
         {children}
       </div>
@@ -130,10 +122,14 @@ export default function BoardShell({ children, data, themeKey }) {
   );
 }
 
-function Group({ label, accent, children }) {
+function Section({ label, accent, children }) {
   return (
-    <div style={{ marginBottom: 24 }}>
-      <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '1.2px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.18)', marginBottom: 10 }}>
+    <div style={{ marginBottom: 26 }}>
+      <div style={{
+        fontSize: 9, fontWeight: 500, letterSpacing: '1.4px',
+        textTransform: 'uppercase', color: 'rgba(255,255,255,0.16)',
+        marginBottom: 11,
+      }}>
         {label}
       </div>
       {children}
@@ -141,24 +137,36 @@ function Group({ label, accent, children }) {
   );
 }
 
-function SideEvent({ accent, title, meta }) {
+function EventRow({ title, meta, accent }) {
   return (
-    <div style={{ borderLeft: `2px solid ${accent}30`, paddingLeft: 11, marginBottom: 11, overflow: 'hidden' }}>
-      <div style={{ fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.8)', lineHeight: 1.4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+    <div style={{ borderLeft: `1.5px solid ${accent}28`, paddingLeft: 11, marginBottom: 12 }}>
+      <div style={{
+        fontSize: 13, fontWeight: 400, color: 'rgba(255,255,255,0.78)',
+        lineHeight: 1.4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+      }}>
         {title}
       </div>
-      <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.26)', marginTop: 2 }}>{meta}</div>
+      {meta && (
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.24)', marginTop: 2 }}>{meta}</div>
+      )}
     </div>
   );
 }
 
-function SideEmail({ accent, from, subject }) {
+function EmailRow({ from, subject, accent }) {
   return (
-    <div style={{ borderLeft: `2px solid ${accent}30`, paddingLeft: 11, marginBottom: 11, overflow: 'hidden' }}>
-      <div style={{ fontSize: 11, fontWeight: 500, color: 'rgba(255,255,255,0.28)', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.1px' }}>
+    <div style={{ borderLeft: `1.5px solid ${accent}28`, paddingLeft: 11, marginBottom: 12 }}>
+      <div style={{
+        fontSize: 10, fontWeight: 500, color: 'rgba(255,255,255,0.26)',
+        marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        letterSpacing: '0.1px',
+      }}>
         {from}
       </div>
-      <div style={{ fontSize: 14, fontWeight: 400, color: 'rgba(255,255,255,0.76)', lineHeight: 1.35, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+      <div style={{
+        fontSize: 13, fontWeight: 400, color: 'rgba(255,255,255,0.72)',
+        lineHeight: 1.35, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+      }}>
         {subject}
       </div>
     </div>

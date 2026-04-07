@@ -38,13 +38,14 @@ function UserNav({ user, onLogout }) {
       display:         'flex',
       alignItems:      'center',
       justifyContent:  'space-between',
-      padding:         '0 20px',
+      padding:         '0 22px',
       borderBottom:    '1px solid rgba(255,255,255,0.04)',
-      background:      'rgba(4,6,12,0.98)',
+      background:      'rgba(4,6,12,0.99)',
       backdropFilter:  'blur(24px)',
       WebkitBackdropFilter: 'blur(24px)',
       zIndex:          50,
       position:        'relative',
+      fontFamily:      "'DM Sans','Inter',system-ui,sans-serif",
     }}>
 
       {/* Wordmark */}
