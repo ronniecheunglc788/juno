@@ -76,5 +76,22 @@ export default async function handler(req, res) {
     return res.status(200).json(user);
   }
 
+  // ── PATCH /api/user — update archetype ──────────────────────────
+  if (req.method === 'PATCH') {
+    const { userId, archetype } = req.body || {};
+    const valid = ['engineer', 'business', 'premed', 'creative'];
+    if (!userId || !valid.includes(archetype)) {
+      return res.status(400).json({ error: 'Invalid request' });
+    }
+    const { data, error } = await supabase
+      .from('users')
+      .update({ archetype })
+      .eq('id', userId)
+      .select('id, name, email, entity_id, archetype')
+      .single();
+    if (error) return internalError(res, error, 'Failed to update archetype');
+    return res.status(200).json(data);
+  }
+
   return res.status(405).json({ error: 'Method not allowed' });
 }
