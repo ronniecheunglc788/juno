@@ -5,21 +5,21 @@ import NodeDetail from '../NodeDetail';
 
 // ── Premed theme: cellular / microscope ──────────────────────────
 const THEME = {
-  bg:        '#020A05',
-  glow:      'rgba(52,211,153,0.05)',
-  label:     'rgba(209,250,229,0.36)',
+  bg:        '#EFFDF5',
+  glow:      'rgba(5,150,105,0.06)',
+  label:     'rgba(5,30,15,0.48)',
   nodeShape: 'circle',
   edgeStyle: 'organic',
   color: (type) => {
     switch (type) {
-      case 'center': return '#34D399';
-      case 'app':    return '#F87171';
-      case 'res':    return '#60A5FA';
-      case 'acad':   return '#4ADE80';
-      case 'other':  return '#2D4438';
-      case 'event':  return '#6EE7B7';
-      case 'note':   return '#1E3A28';
-      default:       return '#1A2E22';
+      case 'center': return '#059669';
+      case 'app':    return '#DC2626';
+      case 'res':    return '#2563EB';
+      case 'acad':   return '#7C3AED';
+      case 'other':  return '#94A3B8';
+      case 'event':  return '#0891B2';
+      case 'note':   return '#94A3B8';
+      default:       return '#CBD5E1';
     }
   },
   drawBackground: (ctx, W, H) => {
@@ -27,10 +27,10 @@ const THEME = {
     const maxR = Math.sqrt(W * W + H * H) * 0.8;
     for (let r = 80; r < maxR; r += 90) {
       ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(52,211,153,${0.025 - r/maxR*0.02})`;
+      ctx.strokeStyle = `rgba(5,150,105,${0.05 - (r/maxR)*0.04})`;
       ctx.lineWidth = 0.5; ctx.stroke();
     }
-    ctx.strokeStyle = 'rgba(52,211,153,0.015)';
+    ctx.strokeStyle = 'rgba(5,150,105,0.04)';
     ctx.lineWidth   = 0.5;
     ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, H); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(W, cy); ctx.stroke();
@@ -120,7 +120,7 @@ export default function PremedBoard({ data, loading }) {
     <BoardShell themeKey="premed" data={data} loading={loading}>
       <div style={{ position: 'relative', width: '100%', height: '100%' }}>
         <ForceGraph nodes={nodes} edges={edges} theme={THEME} onNodeClick={setSelected} />
-        <NodeDetail node={selected} accent="#34D399" onClose={() => setSelected(null)} />
+        <NodeDetail node={selected} accent="#059669" onClose={() => setSelected(null)} />
       </div>
     </BoardShell>
   );
@@ -128,10 +128,10 @@ export default function PremedBoard({ data, loading }) {
 
 function Loading() {
   return (
-    <div style={{ width:'100vw', height:'100vh', background:'#020A05', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'DM Sans',system-ui,sans-serif" }}>
+    <div style={{ width:'100vw', height:'100vh', background:'#EFFDF5', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'DM Sans',system-ui,sans-serif" }}>
       <div style={{ textAlign:'center' }}>
-        <div style={{ fontSize:9, letterSpacing:'2.5px', textTransform:'uppercase', color:'rgba(52,211,153,0.3)', marginBottom:10 }}>breeze</div>
-        <div style={{ fontSize:12, color:'rgba(255,255,255,0.14)', fontWeight:300, letterSpacing:'0.3px' }}>Loading your context…</div>
+        <div style={{ fontSize:9, letterSpacing:'2.5px', textTransform:'uppercase', color:'rgba(5,150,105,0.5)', marginBottom:10 }}>breeze</div>
+        <div style={{ fontSize:12, color:'rgba(0,0,0,0.28)', fontWeight:300, letterSpacing:'0.3px' }}>Loading your context…</div>
       </div>
     </div>
   );

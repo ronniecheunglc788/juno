@@ -47,8 +47,8 @@ function AmbientLight() {
       const xi = (100 - cur.current.x * 100).toFixed(1);
       const yi = (100 - cur.current.y * 100).toFixed(1);
       el.style.background = `
-        radial-gradient(ellipse 65% 50% at ${x}% ${y}%, rgba(160,130,255,0.18) 0%, transparent 60%),
-        radial-gradient(ellipse 55% 45% at ${xi}% ${yi}%, rgba(100,160,255,0.10) 0%, transparent 55%)
+        radial-gradient(ellipse 70% 55% at ${x}% ${y}%, rgba(120,60,255,0.30) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at ${xi}% ${yi}%, rgba(160,100,255,0.16) 0%, transparent 55%)
       `;
       raf.current = requestAnimationFrame(animate);
     }

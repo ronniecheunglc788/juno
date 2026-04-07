@@ -6,22 +6,22 @@ import NodeDetail from '../NodeDetail';
 // ── Engineer theme: circuit board ────────────────────────────────
 // Hexagon nodes, circuit-trace edges, grid background
 const THEME = {
-  bg:        '#060B12',
-  glow:      'rgba(88,166,255,0.05)',
-  label:     'rgba(200,220,255,0.38)',
-  labelFont: '10px "SF Mono","Fira Code",monospace',
+  bg:        '#EFF4FF',
+  glow:      'rgba(37,99,235,0.06)',
+  label:     'rgba(15,30,80,0.48)',
+  labelFont: '10px "DM Sans","Inter",system-ui,sans-serif',
   nodeShape: 'hex',
   edgeStyle: 'circuit',
   color: (type) => {
     switch (type) {
-      case 'center':     return '#58A6FF';
-      case 'repo':       return '#3FB950';
-      case 'repo-stale': return '#2A3540';
-      case 'recruit':    return '#E3B341';
-      case 'recruit-r':  return '#3A4450';
-      case 'event':      return '#56B6C2';
-      case 'note':       return '#404850';
-      default:           return '#2A3540';
+      case 'center':     return '#2563EB';
+      case 'repo':       return '#16A34A';
+      case 'repo-stale': return '#94A3B8';
+      case 'recruit':    return '#D97706';
+      case 'recruit-r':  return '#B8C4D8';
+      case 'event':      return '#0891B2';
+      case 'note':       return '#94A3B8';
+      default:           return '#B8C4D8';
     }
   },
   initBackground: (W, H) => {
@@ -35,7 +35,7 @@ const THEME = {
   drawBackground: (ctx, W, H, frame, memo) => {
     if (!memo) return;
     const { spacing, dots } = memo;
-    ctx.strokeStyle = 'rgba(88,166,255,0.03)';
+    ctx.strokeStyle = 'rgba(37,99,235,0.05)';
     ctx.lineWidth   = 0.5;
     for (let x = spacing / 2; x < W; x += spacing) {
       ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
@@ -43,7 +43,7 @@ const THEME = {
     for (let y = spacing / 2; y < H; y += spacing) {
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
     }
-    ctx.fillStyle = 'rgba(88,166,255,0.09)';
+    ctx.fillStyle = 'rgba(37,99,235,0.12)';
     dots.forEach(({ x, y }) => {
       ctx.beginPath(); ctx.arc(x, y, 1.2, 0, Math.PI * 2); ctx.fill();
     });
@@ -141,7 +141,7 @@ export default function CSBoard({ data, loading }) {
     <BoardShell themeKey="engineer" data={data} loading={loading}>
       <div style={{ position: 'relative', width: '100%', height: '100%' }}>
         <ForceGraph nodes={nodes} edges={edges} theme={THEME} onNodeClick={setSelected} />
-        <NodeDetail node={selected} accent="#58A6FF" onClose={() => setSelected(null)} />
+        <NodeDetail node={selected} accent="#2563EB" onClose={() => setSelected(null)} />
       </div>
     </BoardShell>
   );
@@ -149,10 +149,10 @@ export default function CSBoard({ data, loading }) {
 
 function Loading() {
   return (
-    <div style={{ width:'100vw', height:'100vh', background:'#060B12', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'DM Sans',system-ui,sans-serif" }}>
+    <div style={{ width:'100vw', height:'100vh', background:'#EFF4FF', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'DM Sans',system-ui,sans-serif" }}>
       <div style={{ textAlign:'center' }}>
-        <div style={{ fontSize:9, letterSpacing:'2.5px', textTransform:'uppercase', color:'rgba(88,166,255,0.3)', marginBottom:10 }}>breeze</div>
-        <div style={{ fontSize:12, color:'rgba(255,255,255,0.14)', fontWeight:300, letterSpacing:'0.3px' }}>Loading your context…</div>
+        <div style={{ fontSize:9, letterSpacing:'2.5px', textTransform:'uppercase', color:'rgba(37,99,235,0.45)', marginBottom:10 }}>breeze</div>
+        <div style={{ fontSize:12, color:'rgba(0,0,0,0.28)', fontWeight:300, letterSpacing:'0.3px' }}>Loading your context…</div>
       </div>
     </div>
   );

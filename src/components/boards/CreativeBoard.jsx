@@ -5,35 +5,35 @@ import NodeDetail from '../NodeDetail';
 
 // ── Creative theme: stars, organic curves, particle field ─────────
 const THEME = {
-  bg:        '#070412',
-  glow:      'rgba(192,132,252,0.06)',
-  label:     'rgba(237,233,254,0.36)',
+  bg:        '#F5F0FF',
+  glow:      'rgba(124,58,237,0.06)',
+  label:     'rgba(30,10,50,0.48)',
   nodeShape: 'circle',
   edgeStyle: 'bezier',
   color: (type) => {
     switch (type) {
-      case 'center':    return '#C084FC';
-      case 'project':   return '#818CF8';
-      case 'client':    return '#F472B6';
-      case 'instagram': return '#FBBF24';
-      case 'event':     return '#A5B4FC';
-      case 'note':      return '#3B1F5E';
-      default:          return '#2A1844';
+      case 'center':    return '#7C3AED';
+      case 'project':   return '#4F46E5';
+      case 'client':    return '#BE185D';
+      case 'instagram': return '#D97706';
+      case 'event':     return '#0891B2';
+      case 'note':      return '#94A3B8';
+      default:          return '#C4B5FD';
     }
   },
   initBackground: (W, H) => ({
-    stars: Array.from({ length: 80 }, () => ({
-      x: Math.random() * W, y: Math.random() * H,
-      r: Math.random() * 1.2 + 0.3,
-      a: Math.random(),
+    dots: Array.from({ length: 55 }, () => ({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: Math.random() * 2.5 + 0.6,
+      a: Math.random() * 0.4 + 0.05,
     })),
   }),
   drawBackground: (ctx, W, H, frame, memo) => {
     if (!memo) return;
-    memo.stars.forEach(s => {
-      const twinkle = Math.sin(frame * 0.018 + s.a * 10) * 0.3 + 0.7;
+    memo.dots.forEach(s => {
       ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(192,132,252,${s.a * 0.25 * twinkle})`;
+      ctx.fillStyle = `rgba(124,58,237,${s.a})`;
       ctx.fill();
     });
   },
@@ -147,7 +147,7 @@ export default function CreativeBoard({ data, loading }) {
     <BoardShell themeKey="creative" data={data} loading={loading}>
       <div style={{ position: 'relative', width: '100%', height: '100%' }}>
         <ForceGraph nodes={nodes} edges={edges} theme={THEME} onNodeClick={setSelected} />
-        <NodeDetail node={selected} accent="#C084FC" onClose={() => setSelected(null)} />
+        <NodeDetail node={selected} accent="#7C3AED" onClose={() => setSelected(null)} />
       </div>
     </BoardShell>
   );
@@ -155,10 +155,10 @@ export default function CreativeBoard({ data, loading }) {
 
 function Loading() {
   return (
-    <div style={{ width:'100vw', height:'100vh', background:'#070412', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'DM Sans',system-ui,sans-serif" }}>
+    <div style={{ width:'100vw', height:'100vh', background:'#F5F0FF', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'DM Sans',system-ui,sans-serif" }}>
       <div style={{ textAlign:'center' }}>
-        <div style={{ fontSize:9, letterSpacing:'2.5px', textTransform:'uppercase', color:'rgba(192,132,252,0.3)', marginBottom:10 }}>breeze</div>
-        <div style={{ fontSize:12, color:'rgba(255,255,255,0.14)', fontWeight:300, letterSpacing:'0.3px' }}>Loading your context…</div>
+        <div style={{ fontSize:9, letterSpacing:'2.5px', textTransform:'uppercase', color:'rgba(124,58,237,0.5)', marginBottom:10 }}>breeze</div>
+        <div style={{ fontSize:12, color:'rgba(0,0,0,0.28)', fontWeight:300, letterSpacing:'0.3px' }}>Loading your context…</div>
       </div>
     </div>
   );

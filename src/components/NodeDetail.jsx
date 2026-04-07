@@ -1,5 +1,4 @@
 const FONT  = "'DM Sans','Inter',system-ui,sans-serif";
-const SERIF = "'Playfair Display',Georgia,serif";
 
 export default function NodeDetail({ node, accent, onClose }) {
   if (!node) return null;
@@ -10,63 +9,64 @@ export default function NodeDetail({ node, accent, onClose }) {
       bottom:               32,
       right:                28,
       width:                300,
-      background:           'rgba(4,6,11,0.92)',
-      backdropFilter:       'blur(32px)',
-      WebkitBackdropFilter: 'blur(32px)',
-      border:               '1px solid rgba(255,255,255,0.06)',
-      borderTop:            `2px solid ${accent}44`,
+      background:           'rgba(255,255,255,0.97)',
+      backdropFilter:       'blur(28px)',
+      WebkitBackdropFilter: 'blur(28px)',
+      border:               '1px solid rgba(0,0,0,0.08)',
+      borderTop:            `2px solid ${accent}`,
       borderRadius:         16,
-      padding:              '24px 24px 22px',
-      boxShadow:            `0 40px 100px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,255,255,0.02), inset 0 1px 0 rgba(255,255,255,0.04)`,
+      padding:              '22px 24px 22px',
+      boxShadow:            '0 20px 60px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06)',
       fontFamily:           FONT,
       zIndex:               100,
       animation:            'nodeFadeIn 0.18s ease',
       overflow:             'hidden',
     }}>
 
-      {/* Ambient glow matching accent */}
+      {/* Subtle accent tint in corner */}
       <div style={{
         position:     'absolute',
-        top:          -30,
-        right:        -30,
-        width:        140,
-        height:       140,
+        top:          -20,
+        right:        -20,
+        width:        120,
+        height:       120,
         borderRadius: '50%',
-        background:   `radial-gradient(circle, ${accent}0c 0%, transparent 70%)`,
+        background:   `radial-gradient(circle, ${accent}08 0%, transparent 70%)`,
         pointerEvents:'none',
       }} />
 
-      {/* Header row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, position: 'relative' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, position: 'relative' }}>
         <div style={{
           fontSize:      9,
-          fontWeight:    500,
-          letterSpacing: '1.6px',
+          fontWeight:    600,
+          letterSpacing: '1.5px',
           textTransform: 'uppercase',
-          color:         `${accent}80`,
+          color:         accent,
+          opacity:       0.8,
         }}>
           {labelForType(node.type)}
         </div>
         <button
           onClick={onClose}
           style={{
-            background:     'rgba(255,255,255,0.06)',
-            border:         '1px solid rgba(255,255,255,0.08)',
+            background:     'rgba(0,0,0,0.05)',
+            border:         '1px solid rgba(0,0,0,0.08)',
             borderRadius:   '50%',
             width:          22,
             height:         22,
             cursor:         'pointer',
-            color:          'rgba(255,255,255,0.3)',
+            color:          'rgba(0,0,0,0.38)',
             fontSize:       14,
             display:        'flex',
             alignItems:     'center',
             justifyContent: 'center',
             lineHeight:     1,
             padding:        0,
-            transition:     'background 0.15s, color 0.15s',
+            transition:     'background 0.15s',
           }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'rgba(255,255,255,0.3)'; }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.1)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.05)'; }}
         >
           ×
         </button>
@@ -86,30 +86,29 @@ function NodeContent({ node, accent }) {
     <div style={{ position: 'relative' }}>
       <div style={{
         fontSize:     15,
-        fontWeight:   400,
-        color:        'rgba(255,255,255,0.85)',
+        fontWeight:   500,
+        color:        'rgba(0,0,0,0.82)',
         lineHeight:   1.45,
         marginBottom: fields.length ? 18 : 0,
-        fontFamily:   FONT,
       }}>
         {title}
       </div>
 
       {fields.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {fields.map((f, i) => (
             <div key={i}>
               <div style={{
                 fontSize:      9,
-                fontWeight:    500,
-                letterSpacing: '1.4px',
+                fontWeight:    600,
+                letterSpacing: '1.3px',
                 textTransform: 'uppercase',
-                color:         'rgba(255,255,255,0.18)',
+                color:         'rgba(0,0,0,0.28)',
                 marginBottom:  4,
               }}>
                 {f.label}
               </div>
-              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', lineHeight: 1.55 }}>
+              <div style={{ fontSize: 13, color: 'rgba(0,0,0,0.58)', lineHeight: 1.55 }}>
                 {f.value}
               </div>
             </div>
@@ -121,24 +120,24 @@ function NodeContent({ node, accent }) {
         <div style={{
           display:      'inline-flex',
           alignItems:   'center',
-          gap:          5,
-          marginTop:    18,
+          gap:          6,
+          marginTop:    16,
           fontSize:     10,
-          fontWeight:   500,
+          fontWeight:   600,
           letterSpacing:'0.4px',
           padding:      '4px 11px',
           borderRadius: 20,
           background:   `${accent}10`,
-          color:        `${accent}cc`,
-          border:       `1px solid ${accent}22`,
+          color:        accent,
+          border:       `1px solid ${accent}28`,
         }}>
           <span style={{
             width:        5,
             height:       5,
             borderRadius: '50%',
-            background:   `${accent}cc`,
+            background:   accent,
             display:      'inline-block',
-            boxShadow:    `0 0 4px ${accent}80`,
+            opacity:      0.8,
           }} />
           {node.statusLabel}
         </div>

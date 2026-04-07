@@ -5,26 +5,26 @@ import NodeDetail from '../NodeDetail';
 
 // ── Business theme: network graph, bezier, radial spokes ─────────
 const THEME = {
-  bg:        '#05080F',
-  glow:      'rgba(201,168,76,0.05)',
-  label:     'rgba(255,245,215,0.38)',
+  bg:        '#FFFBF0',
+  glow:      'rgba(180,83,9,0.06)',
+  label:     'rgba(40,20,5,0.48)',
   nodeShape: 'circle',
   edgeStyle: 'bezier',
   color: (type) => {
     switch (type) {
-      case 'center':       return '#C9A84C';
-      case 'contact-warm': return '#22C55E';
-      case 'contact-mid':  return '#C9A84C';
-      case 'contact-cold': return '#EF4444';
-      case 'opp':          return '#D4A847';
-      case 'event':        return '#93C5FD';
-      default:             return '#2A3040';
+      case 'center':       return '#B45309';
+      case 'contact-warm': return '#15803D';
+      case 'contact-mid':  return '#B45309';
+      case 'contact-cold': return '#CBD5E1';
+      case 'opp':          return '#C2410C';
+      case 'event':        return '#1D4ED8';
+      default:             return '#CBD5E1';
     }
   },
   drawBackground: (ctx, W, H) => {
     const cx = W / 2, cy = H / 2;
     const maxR = Math.sqrt(W * W + H * H);
-    ctx.strokeStyle = 'rgba(201,168,76,0.025)';
+    ctx.strokeStyle = 'rgba(180,83,9,0.04)';
     ctx.lineWidth = 0.5;
     for (let i = 0; i < 24; i++) {
       const a = (i / 24) * Math.PI * 2;
@@ -33,7 +33,7 @@ const THEME = {
       ctx.lineTo(cx + Math.cos(a) * maxR, cy + Math.sin(a) * maxR);
       ctx.stroke();
     }
-    ctx.strokeStyle = 'rgba(201,168,76,0.02)';
+    ctx.strokeStyle = 'rgba(180,83,9,0.03)';
     for (let r = 120; r < maxR; r += 120) {
       ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
     }
@@ -133,7 +133,7 @@ export default function BusinessBoard({ data, loading }) {
     <BoardShell themeKey="business" data={data} loading={loading}>
       <div style={{ position: 'relative', width: '100%', height: '100%' }}>
         <ForceGraph nodes={nodes} edges={edges} theme={THEME} onNodeClick={setSelected} />
-        <NodeDetail node={selected} accent="#C9A84C" onClose={() => setSelected(null)} />
+        <NodeDetail node={selected} accent="#B45309" onClose={() => setSelected(null)} />
       </div>
     </BoardShell>
   );
@@ -141,10 +141,10 @@ export default function BusinessBoard({ data, loading }) {
 
 function Loading() {
   return (
-    <div style={{ width:'100vw', height:'100vh', background:'#05080F', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'DM Sans',system-ui,sans-serif" }}>
+    <div style={{ width:'100vw', height:'100vh', background:'#FFFBF0', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'DM Sans',system-ui,sans-serif" }}>
       <div style={{ textAlign:'center' }}>
-        <div style={{ fontSize:9, letterSpacing:'2.5px', textTransform:'uppercase', color:'rgba(201,168,76,0.3)', marginBottom:10 }}>breeze</div>
-        <div style={{ fontSize:12, color:'rgba(255,255,255,0.14)', fontWeight:300, letterSpacing:'0.3px' }}>Loading your context…</div>
+        <div style={{ fontSize:9, letterSpacing:'2.5px', textTransform:'uppercase', color:'rgba(180,83,9,0.45)', marginBottom:10 }}>breeze</div>
+        <div style={{ fontSize:12, color:'rgba(0,0,0,0.28)', fontWeight:300, letterSpacing:'0.3px' }}>Loading your context…</div>
       </div>
     </div>
   );

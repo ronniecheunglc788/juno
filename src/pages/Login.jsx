@@ -1,5 +1,38 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+
+function AmbientLight() {
+  const ref = useRef(null);
+  const pos = useRef({ x: 0.5, y: 0.4 });
+  const cur = useRef({ x: 0.5, y: 0.4 });
+  const raf = useRef(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    function onMove(e) {
+      pos.current = { x: e.clientX / window.innerWidth, y: e.clientY / window.innerHeight };
+    }
+    function animate() {
+      cur.current.x += (pos.current.x - cur.current.x) * 0.05;
+      cur.current.y += (pos.current.y - cur.current.y) * 0.05;
+      const x  = (cur.current.x * 100).toFixed(1);
+      const y  = (cur.current.y * 100).toFixed(1);
+      const xi = (100 - cur.current.x * 100).toFixed(1);
+      const yi = (100 - cur.current.y * 100).toFixed(1);
+      el.style.background = `
+        radial-gradient(ellipse 70% 55% at ${x}% ${y}%, rgba(220,60,60,0.26) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at ${xi}% ${yi}%, rgba(255,100,60,0.13) 0%, transparent 55%)
+      `;
+      raf.current = requestAnimationFrame(animate);
+    }
+    window.addEventListener('mousemove', onMove);
+    raf.current = requestAnimationFrame(animate);
+    return () => { window.removeEventListener('mousemove', onMove); cancelAnimationFrame(raf.current); };
+  }, []);
+
+  return <div ref={ref} style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 1 }} />;
+}
 
 export default function Login() {
   const navigate = useNavigate();
@@ -25,12 +58,15 @@ export default function Login() {
     <div style={{
       minHeight:     '100vh',
       background:    '#F9F8F6',
+      position:      'relative',
       display:       'flex',
       alignItems:    'center',
       justifyContent:'center',
       fontFamily:    "'DM Sans', system-ui, sans-serif",
       padding:       '40px 24px',
     }}>
+      <AmbientLight />
+      <div style={{ position: 'relative', zIndex: 2 }}>
       <div style={{
         width:         '100%',
         maxWidth:      400,
@@ -125,6 +161,7 @@ export default function Login() {
             Set up your board
           </a>
         </div>
+      </div>
       </div>
     </div>
   );
