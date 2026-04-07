@@ -157,13 +157,13 @@ function LandingStep({ onSubmit, loading, error }) {
           </p>
 
           <p style={{
-            fontFamily:    "'Major Mono Display', monospace",
-            fontSize:      'clamp(28px, 3.6vw, 54px)',
+            fontFamily:    "'Playfair Display', Georgia, serif",
+            fontSize:      'clamp(30px, 3.8vw, 50px)',
             fontWeight:    400,
-            fontStyle:     'normal',
-            lineHeight:    1.28,
-            letterSpacing: '-0.5px',
-            color:         'rgba(10,10,10,0.85)',
+            fontStyle:     'italic',
+            lineHeight:    1.18,
+            letterSpacing: '-0.3px',
+            color:         'rgba(10,10,10,0.88)',
             margin:        0,
           }}>
             Build your own<br />context now.
