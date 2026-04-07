@@ -108,8 +108,9 @@ export default async function handler(req, res) {
         actionName: 'GOOGLECALENDAR_EVENTS_LIST',
         params: { calendarId: 'primary', maxResults: 40, timeMin: now.toISOString(), timeMax: twoWeeks.toISOString() },
       });
-      console.log('[board-data] calendar raw keys:', Object.keys(r?.data || {}));
-      console.log('[board-data] calendar items count:', (r?.data?.items || []).length);
+      const calKeys = Object.keys(r?.data || {}).join(',');
+      const calCount = (r?.data?.items || []).length;
+      console.log(`CAL keys=${calKeys} items=${calCount}`);
       const items = r?.data?.items || [];
       result.calendar = items.map(e => {
         const dateStr = e.start?.dateTime || e.start?.date || '';
