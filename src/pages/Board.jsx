@@ -208,7 +208,7 @@ export default function Board() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
       <UserNav user={user} onLogout={handleLogout} />
-      <div style={{ flex: 1, overflow: 'hidden' }}>
+      <div style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
         <BoardComponent data={data} loading={loading} />
       </div>
     </div>
