@@ -157,12 +157,12 @@ function LandingStep({ onSubmit, loading, error }) {
           </p>
 
           <p style={{
-            fontFamily:    "'Playfair Display', Georgia, serif",
-            fontSize:      'clamp(30px, 3.8vw, 50px)',
-            fontWeight:    400,
-            fontStyle:     'italic',
-            lineHeight:    1.18,
-            letterSpacing: '-0.3px',
+            fontFamily:    "'Silkscreen', monospace",
+            fontSize:      'clamp(22px, 3vw, 42px)',
+            fontWeight:    700,
+            fontStyle:     'normal',
+            lineHeight:    1.35,
+            letterSpacing: '1px',
             color:         'rgba(10,10,10,0.88)',
             margin:        0,
           }}>
