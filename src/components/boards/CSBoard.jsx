@@ -68,7 +68,7 @@ export default function CSBoard({ data, loading }) {
     const firstName = data?.user?.name?.split(' ')[0] || 'you';
     const repos     = (data?.github   || []).slice(0, 9);
     const recruits  = (data?.emails   || []).filter(isRecruit).slice(0, 8);
-    const events    = (data?.calendar || []).filter(e => !e.isToday).slice(0, 5);
+    const events    = (data?.calendar || []).slice(0, 5);
     const notes     = (data?.notion   || []).slice(0, 5);
 
     const ns = [{ id: 'center', type: 'center', label: firstName, size: 20 }];

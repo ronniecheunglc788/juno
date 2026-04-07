@@ -62,7 +62,7 @@ export default function CreativeBoard({ data, loading }) {
     const emails    = [...(data?.emails || [])].sort((a, b) => urgencyScore(b) - urgencyScore(a));
     const drive     = (data?.drive || []).filter(f => !DRIVE_IGNORE.includes(f.mimeType)).slice(0, 8);
     const notion    = (data?.notion || []).slice(0, 4);
-    const events    = (data?.calendar || []).filter(e => !e.isToday).slice(0, 5);
+    const events    = (data?.calendar || []).slice(0, 5);
     const ig        = data?.instagram;
 
     const ns = [{ id: 'center', type: 'center', label: firstName, size: 20 }];

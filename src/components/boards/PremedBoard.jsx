@@ -60,7 +60,7 @@ export default function PremedBoard({ data, loading }) {
   const { nodes, edges } = useMemo(() => {
     const firstName = data?.user?.name?.split(' ')[0] || 'you';
     const emails    = data?.emails   || [];
-    const events    = (data?.calendar || []).filter(e => !e.isToday).slice(0, 6);
+    const events    = (data?.calendar || []).slice(0, 6);
     const notes     = (data?.notion  || []).slice(0, 4);
 
     const ns = [{ id: 'center', type: 'center', label: firstName, size: 20 }];

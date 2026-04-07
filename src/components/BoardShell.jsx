@@ -99,7 +99,7 @@ export default function BoardShell({ children, data, themeKey }) {
 
         {/* Connected apps — pinned bottom */}
         <div style={{ padding: '14px 20px 18px', borderTop: '1px solid rgba(255,255,255,0.05)', flexShrink: 0 }}>
-          <div style={{ fontSize: 10, fontWeight: 500, letterSpacing: '1.2px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.16)', marginBottom: 10 }}>
+          <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '1.2px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.16)', marginBottom: 10 }}>
             Connected
           </div>
           {connected.length === 0 ? (
@@ -133,7 +133,7 @@ export default function BoardShell({ children, data, themeKey }) {
 function Group({ label, accent, children }) {
   return (
     <div style={{ marginBottom: 24 }}>
-      <div style={{ fontSize: 10, fontWeight: 500, letterSpacing: '1.2px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.18)', marginBottom: 10 }}>
+      <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '1.2px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.18)', marginBottom: 10 }}>
         {label}
       </div>
       {children}
@@ -144,10 +144,10 @@ function Group({ label, accent, children }) {
 function SideEvent({ accent, title, meta }) {
   return (
     <div style={{ borderLeft: `2px solid ${accent}30`, paddingLeft: 11, marginBottom: 11, overflow: 'hidden' }}>
-      <div style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.8)', lineHeight: 1.4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+      <div style={{ fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.8)', lineHeight: 1.4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         {title}
       </div>
-      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.26)', marginTop: 2 }}>{meta}</div>
+      <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.26)', marginTop: 2 }}>{meta}</div>
     </div>
   );
 }
@@ -158,7 +158,7 @@ function SideEmail({ accent, from, subject }) {
       <div style={{ fontSize: 11, fontWeight: 500, color: 'rgba(255,255,255,0.28)', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.1px' }}>
         {from}
       </div>
-      <div style={{ fontSize: 13, fontWeight: 400, color: 'rgba(255,255,255,0.76)', lineHeight: 1.35, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+      <div style={{ fontSize: 14, fontWeight: 400, color: 'rgba(255,255,255,0.76)', lineHeight: 1.35, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         {subject}
       </div>
     </div>

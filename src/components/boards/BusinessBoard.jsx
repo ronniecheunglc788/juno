@@ -71,7 +71,7 @@ export default function BusinessBoard({ data, loading }) {
     const firstName = data?.user?.name?.split(' ')[0] || 'you';
     const contacts  = buildContacts(data?.emails || []);
     const opps      = (data?.emails || []).filter(isOpp).slice(0, 7);
-    const events    = (data?.calendar || []).filter(e => !e.isToday).slice(0, 5);
+    const events    = (data?.calendar || []).slice(0, 5);
 
     const ns = [{ id: 'center', type: 'center', label: firstName, size: 20 }];
 
