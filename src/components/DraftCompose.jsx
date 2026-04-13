@@ -47,7 +47,10 @@ export default function DraftCompose({ email, accent = '#2563EB', onClose }) {
       + '&to='   + encodeURIComponent(to)
       + '&su='   + encodeURIComponent(subject)
       + '&body=' + encodeURIComponent(body);
-    window.open(url, '_blank');
+    const w = 600, h = 660;
+    const left = Math.round((screen.width  - w) / 2);
+    const top  = Math.round((screen.height - h) / 2);
+    window.open(url, 'gmail-compose', `width=${w},height=${h},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no`);
     onClose();
   }
 
