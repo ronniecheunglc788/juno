@@ -13,7 +13,6 @@ export default function DraftCompose({ email, accent = '#2563EB', onClose }) {
   const [subject,    setSubject]    = useState(`Re: ${email?.subject || ''}`);
   const [body,       setBody]       = useState('');
   const [generating, setGenerating] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
   const [error,      setError]      = useState('');
 
   const user = getUser();
@@ -42,32 +41,14 @@ export default function DraftCompose({ email, accent = '#2563EB', onClose }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function handleCreate() {
-    setSubmitting(true);
-    setError('');
-    try {
-      const r = await fetch('/api/create-draft', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          entityId: user.entity_id,
-          to:       email?.fromEmail || email?.from || '',
-          subject,
-          body,
-          threadId: email?.threadId || '',
-        }),
-      });
-      const d = await r.json();
-      if (!r.ok) throw new Error(d.error || 'Failed to create draft');
-      const gmailUrl = d.messageId
-        ? `https://mail.google.com/mail/u/0/#drafts/${d.messageId}`
-        : 'https://mail.google.com/mail/u/0/#drafts';
-      window.open(gmailUrl, '_blank');
-      onClose();
-    } catch (err) {
-      setError(err.message);
-      setSubmitting(false);
-    }
+  function handleCreate() {
+    const to  = email?.fromEmail || email?.from || '';
+    const url = 'https://mail.google.com/mail/u/0/?view=cm&fs=1'
+      + '&to='   + encodeURIComponent(to)
+      + '&su='   + encodeURIComponent(subject)
+      + '&body=' + encodeURIComponent(body);
+    window.open(url, '_blank');
+    onClose();
   }
 
   // ── Minimized strip ───────────────────────────────────────────────────────
@@ -134,7 +115,7 @@ export default function DraftCompose({ email, accent = '#2563EB', onClose }) {
     animation:    'compose-in 0.2s ease',
   };
 
-  const isDisabled = generating || submitting || !body.trim();
+  const isDisabled = generating || !body.trim();
 
   return (
     <div style={panelStyle}>
@@ -296,7 +277,7 @@ export default function DraftCompose({ email, accent = '#2563EB', onClose }) {
           onMouseEnter={e => { if (!isDisabled) e.currentTarget.style.filter = 'brightness(1.08)'; }}
           onMouseLeave={e => { e.currentTarget.style.filter = ''; }}
         >
-          {submitting ? 'Creating…' : 'Open in Gmail →'}
+          Open in Gmail →
         </button>
       </div>
     </div>
