@@ -13,7 +13,6 @@ export default function DraftCompose({ email, accent = '#2563EB', onClose }) {
   const [subject,    setSubject]    = useState(`Re: ${email?.subject || ''}`);
   const [body,       setBody]       = useState('');
   const [generating, setGenerating] = useState(true);
-  const [saving,     setSaving]     = useState(false);
   const [error,      setError]      = useState('');
 
   const user = getUser();
@@ -42,26 +41,20 @@ export default function DraftCompose({ email, accent = '#2563EB', onClose }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function handleCreate() {
-    const to       = email?.fromEmail || email?.from || '';
-    const threadId = email?.threadId  || '';
+  function handleCreate() {
+    const to        = email?.fromEmail || email?.from || '';
+    const messageId = email?.messageId || '';
 
-    setSaving(true);
-    try {
-      await fetch('/api/create-draft', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entityId: user.entity_id, to, subject, body, threadId }),
-      });
-    } catch {
-      // non-fatal — still open Gmail so the user can see the thread
-    }
+    // Opens Gmail compose as an overlay (no fs=1) with the AI draft pre-filled.
+    // inreplyto makes Gmail quote the original email below your reply body — exactly
+    // like clicking Reply inside Gmail would look.
+    const url = 'https://mail.google.com/mail/u/0/?view=cm'
+      + '&to='   + encodeURIComponent(to)
+      + '&su='   + encodeURIComponent(subject)
+      + '&body=' + encodeURIComponent(body)
+      + (messageId ? '&inreplyto=' + encodeURIComponent(messageId) : '');
 
-    // Open the specific thread so the user sees the original email + draft below it
-    const gmailUrl = threadId
-      ? `https://mail.google.com/mail/u/0/#inbox/${threadId}`
-      : 'https://mail.google.com/mail/u/0/';
-    window.open(gmailUrl, '_blank');
+    window.open(url, '_blank');
     onClose();
   }
 
@@ -129,7 +122,7 @@ export default function DraftCompose({ email, accent = '#2563EB', onClose }) {
     animation:    'compose-in 0.2s ease',
   };
 
-  const isDisabled = generating || saving || !body.trim();
+  const isDisabled = generating || !body.trim();
 
   return (
     <div style={panelStyle}>
@@ -291,7 +284,7 @@ export default function DraftCompose({ email, accent = '#2563EB', onClose }) {
           onMouseEnter={e => { if (!isDisabled) e.currentTarget.style.filter = 'brightness(1.08)'; }}
           onMouseLeave={e => { e.currentTarget.style.filter = ''; }}
         >
-          {saving ? 'Saving…' : 'Open in Gmail →'}
+          Open in Gmail →
         </button>
       </div>
     </div>
