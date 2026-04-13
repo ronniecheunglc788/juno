@@ -43,7 +43,7 @@ export default function DraftCompose({ email, accent = '#2563EB', onClose }) {
 
   function handleCreate() {
     const to  = email?.fromEmail || email?.from || '';
-    const url = 'https://mail.google.com/mail/u/0/?view=cm&fs=1'
+    const url = 'https://mail.google.com/mail/u/0/?view=cm'
       + '&to='   + encodeURIComponent(to)
       + '&su='   + encodeURIComponent(subject)
       + '&body=' + encodeURIComponent(body);
