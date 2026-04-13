@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import BoardShell from '../BoardShell';
 import ForceGraph from '../ForceGraph';
 import NodeDetail from '../NodeDetail';
+import { useNodeScores } from '../../hooks/useNodeScores';
 
 // ── Engineer theme: circuit board ────────────────────────────────
 // Hexagon nodes, circuit-trace edges, grid background
@@ -64,7 +65,7 @@ export default function CSBoard({ data, loading }) {
   if (loading) return <Loading />;
   const [selected, setSelected] = useState(null);
 
-  const { nodes, edges } = useMemo(() => {
+  const baseNodes = useMemo(() => {
     const firstName = data?.user?.name?.split(' ')[0] || 'you';
     const repos     = (data?.github   || []).slice(0, 9);
     const recruits  = (data?.emails   || []).filter(isRecruit).slice(0, 8);
@@ -73,7 +74,6 @@ export default function CSBoard({ data, loading }) {
 
     const ns = [{ id: 'center', type: 'center', label: firstName, size: 20 }];
 
-    // Repos → right cluster, importance by recency
     repos.forEach((r, i) => {
       const angle = -Math.PI/2.8 + (i / Math.max(repos.length-1,1)) * (Math.PI*0.8);
       const days  = staleDays(r.lastCommit);
@@ -89,7 +89,6 @@ export default function CSBoard({ data, loading }) {
       });
     });
 
-    // Recruiting → left cluster, unread = higher importance
     recruits.forEach((em, i) => {
       const angle = Math.PI - Math.PI/3 + (i / Math.max(recruits.length-1,1)) * (Math.PI*0.66);
       const imp   = em.isUnread ? 0.85 : 0.4;
@@ -104,7 +103,6 @@ export default function CSBoard({ data, loading }) {
       });
     });
 
-    // Events → bottom, soonest = most important
     events.forEach((ev, i) => {
       const angle = Math.PI/2 + (i - events.length/2) * 0.28;
       const imp   = Math.max(0, 1 - i / events.length) * 0.6;
@@ -116,7 +114,6 @@ export default function CSBoard({ data, loading }) {
       });
     });
 
-    // Notes → top, low importance
     notes.forEach((n, i) => {
       const angle = -Math.PI/2 + (i - notes.length/2) * 0.3;
       ns.push({
@@ -127,15 +124,23 @@ export default function CSBoard({ data, loading }) {
       });
     });
 
+    return ns;
+  }, [data]);
+
+  const aiScores = useNodeScores(baseNodes, data?.user?.archetype);
+
+  const { nodes, edges } = useMemo(() => {
+    const ns = baseNodes.map(n =>
+      aiScores[n.id] != null ? { ...n, importance: aiScores[n.id] } : n
+    );
     const es = ns.slice(1).map((n, i) => ({
       source: 0, target: i+1,
       strong: n.type === 'repo' || n.type === 'recruit',
       rest: Math.round(310 - (n.importance ?? 0.3) * 200),
       k: 0.007,
     }));
-
     return { nodes: ns, edges: es };
-  }, [data]);
+  }, [baseNodes, aiScores]);
 
   return (
     <BoardShell themeKey="engineer" data={data} loading={loading}>

@@ -7,7 +7,11 @@
       "Bash(node -e \"const c = require\\('./node_modules/composio-core/index.js'\\); console.log\\(Object.keys\\(c\\)\\)\")",
       "Bash(node -e ':*)",
       "Bash(curl -s \"https://breeze-demo-orcin.vercel.app/api/board-data?userId=ed54a5b6-d0a1-4fe5-8fe2-6bb4cb4ed63a&entityId=breeze_ronneycheunglc_gmail_com\")",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(node:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(git push:*)"
     ]
   }
 }

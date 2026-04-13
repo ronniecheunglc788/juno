@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import BoardShell from '../BoardShell';
 import ForceGraph from '../ForceGraph';
 import NodeDetail from '../NodeDetail';
+import { useNodeScores } from '../../hooks/useNodeScores';
 
 // ── Business theme: network graph, bezier, radial spokes ─────────
 const THEME = {
@@ -67,7 +68,7 @@ export default function BusinessBoard({ data, loading }) {
   if (loading) return <Loading />;
   const [selected, setSelected] = useState(null);
 
-  const { nodes, edges } = useMemo(() => {
+  const baseNodes = useMemo(() => {
     const firstName = data?.user?.name?.split(' ')[0] || 'you';
     const contacts  = buildContacts(data?.emails || []);
     const opps      = (data?.emails || []).filter(isOpp).slice(0, 7);
@@ -75,7 +76,6 @@ export default function BusinessBoard({ data, loading }) {
 
     const ns = [{ id: 'center', type: 'center', label: firstName, size: 20 }];
 
-    // Contacts — spread all around, importance by recency
     contacts.forEach((c, i) => {
       const angle = (i / contacts.length) * Math.PI * 2 - Math.PI / 2;
       const days  = daysAgoN(c.date);
@@ -93,7 +93,6 @@ export default function BusinessBoard({ data, loading }) {
       });
     });
 
-    // Opportunities — top cluster (diamonds), unread = higher importance
     opps.forEach((op, i) => {
       const angle = -Math.PI / 2 + (i - opps.length/2) * 0.26;
       const imp   = op.isUnread ? 0.85 : 0.5;
@@ -107,7 +106,6 @@ export default function BusinessBoard({ data, loading }) {
       });
     });
 
-    // Events — lower-right, soonest = most important
     events.forEach((ev, i) => {
       const angle = Math.PI / 3 + (i - events.length/2) * 0.24;
       const imp   = Math.max(0, 1 - i / events.length) * 0.5;
@@ -119,15 +117,23 @@ export default function BusinessBoard({ data, loading }) {
       });
     });
 
+    return ns;
+  }, [data]);
+
+  const aiScores = useNodeScores(baseNodes, data?.user?.archetype);
+
+  const { nodes, edges } = useMemo(() => {
+    const ns = baseNodes.map(n =>
+      aiScores[n.id] != null ? { ...n, importance: aiScores[n.id] } : n
+    );
     const es = ns.slice(1).map((n, i) => ({
       source: 0, target: i+1,
       strong: n.type === 'contact-warm' || n.type === 'opp',
       rest: Math.round(310 - (n.importance ?? 0.3) * 200),
       k: 0.007,
     }));
-
     return { nodes: ns, edges: es };
-  }, [data]);
+  }, [baseNodes, aiScores]);
 
   return (
     <BoardShell themeKey="business" data={data} loading={loading}>

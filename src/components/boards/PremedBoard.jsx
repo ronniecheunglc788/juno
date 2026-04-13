@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import BoardShell from '../BoardShell';
 import ForceGraph from '../ForceGraph';
 import NodeDetail from '../NodeDetail';
+import { useNodeScores } from '../../hooks/useNodeScores';
 
 // ── Premed theme: cellular / microscope ──────────────────────────
 const THEME = {
@@ -57,7 +58,7 @@ export default function PremedBoard({ data, loading }) {
   if (loading) return <Loading />;
   const [selected, setSelected] = useState(null);
 
-  const { nodes, edges } = useMemo(() => {
+  const baseNodes = useMemo(() => {
     const firstName = data?.user?.name?.split(' ')[0] || 'you';
     const emails    = data?.emails   || [];
     const events    = (data?.calendar || []).slice(0, 6);
@@ -106,15 +107,23 @@ export default function PremedBoard({ data, loading }) {
       });
     });
 
+    return ns;
+  }, [data]);
+
+  const aiScores = useNodeScores(baseNodes, data?.user?.archetype);
+
+  const { nodes, edges } = useMemo(() => {
+    const ns = baseNodes.map(n =>
+      aiScores[n.id] != null ? { ...n, importance: aiScores[n.id] } : n
+    );
     const es = ns.slice(1).map((n, i) => ({
       source: 0, target: i+1,
       strong: n.type === 'app' || n.type === 'res',
       rest: Math.round(310 - (n.importance ?? 0.3) * 200),
       k: 0.007,
     }));
-
     return { nodes: ns, edges: es };
-  }, [data]);
+  }, [baseNodes, aiScores]);
 
   return (
     <BoardShell themeKey="premed" data={data} loading={loading}>

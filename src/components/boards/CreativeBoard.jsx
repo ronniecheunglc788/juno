@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import BoardShell from '../BoardShell';
 import ForceGraph from '../ForceGraph';
 import NodeDetail from '../NodeDetail';
+import { useNodeScores } from '../../hooks/useNodeScores';
 
 // ── Creative theme: stars, organic curves, particle field ─────────
 const THEME = {
@@ -57,7 +58,7 @@ export default function CreativeBoard({ data, loading }) {
   if (loading) return <Loading />;
   const [selected, setSelected] = useState(null);
 
-  const { nodes, edges } = useMemo(() => {
+  const baseNodes = useMemo(() => {
     const firstName = data?.user?.name?.split(' ')[0] || 'you';
     const emails    = [...(data?.emails || [])].sort((a, b) => urgencyScore(b) - urgencyScore(a));
     const drive     = (data?.drive || []).filter(f => !DRIVE_IGNORE.includes(f.mimeType)).slice(0, 8);
@@ -67,7 +68,6 @@ export default function CreativeBoard({ data, loading }) {
 
     const ns = [{ id: 'center', type: 'center', label: firstName, size: 20 }];
 
-    // Drive files / projects → right (stars), recent = more important
     drive.forEach((f, i) => {
       const angle = -Math.PI / 3.5 + (i / Math.max(drive.length-1, 1)) * (Math.PI * 0.7);
       const imp   = Math.max(0, 1 - i / drive.length) * 0.75 + 0.1;
@@ -81,7 +81,6 @@ export default function CreativeBoard({ data, loading }) {
       });
     });
 
-    // Client emails → top-left (diamonds), urgency-sorted
     emails.slice(0, 6).forEach((em, i) => {
       const angle = Math.PI + Math.PI/3 - (i / Math.max(emails.length-1, 1)) * (Math.PI * 0.6);
       const uScore = urgencyScore(em);
@@ -97,7 +96,6 @@ export default function CreativeBoard({ data, loading }) {
       });
     });
 
-    // Instagram → left, large — importance scales with engagement
     if (ig) {
       const imp = ig.followers > 5000 ? 0.8 : ig.followers > 1000 ? 0.6 : 0.4;
       ns.push({
@@ -110,7 +108,6 @@ export default function CreativeBoard({ data, loading }) {
       });
     }
 
-    // Events → bottom-right
     events.forEach((ev, i) => {
       const angle = Math.PI / 2.5 + (i - events.length/2) * 0.25;
       const imp   = Math.max(0, 1 - i / events.length) * 0.5;
@@ -122,7 +119,6 @@ export default function CreativeBoard({ data, loading }) {
       });
     });
 
-    // Notes → top
     notion.forEach((n, i) => {
       const angle = -Math.PI * 0.6 + (i - notion.length/2) * 0.28;
       ns.push({
@@ -133,15 +129,23 @@ export default function CreativeBoard({ data, loading }) {
       });
     });
 
+    return ns;
+  }, [data]);
+
+  const aiScores = useNodeScores(baseNodes, data?.user?.archetype);
+
+  const { nodes, edges } = useMemo(() => {
+    const ns = baseNodes.map(n =>
+      aiScores[n.id] != null ? { ...n, importance: aiScores[n.id] } : n
+    );
     const es = ns.slice(1).map((n, i) => ({
       source: 0, target: i+1,
       strong: n.type === 'project' || n.type === 'client',
       rest: Math.round(310 - (n.importance ?? 0.3) * 200),
       k: 0.007,
     }));
-
     return { nodes: ns, edges: es };
-  }, [data]);
+  }, [baseNodes, aiScores]);
 
   return (
     <BoardShell themeKey="creative" data={data} loading={loading}>
