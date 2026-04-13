@@ -53,15 +53,22 @@ function urgencyScore(em) {
 function cleanFilename(name) {
   return name.replace(/\.(fig|pdf|pptx|docx|xlsx|json|png|jpg)$/i, '').replace(/_/g, ' ');
 }
+function subjectWords(subject, maxWords = 4) {
+  const clean = (subject || '').replace(/^(Re:|Fwd:|FWD:|RE:|Fw:)\s*/i, '').trim();
+  return clean.split(/\s+/).slice(0, maxWords).join(' ') || 'Email';
+}
+function dayHint(startRaw) {
+  const diff = Math.floor((new Date(startRaw) - Date.now()) / 86400000);
+  if (diff === 0) return 'today';
+  if (diff === 1) return 'tomorrow';
+  return new Date(startRaw).toLocaleDateString('en-US', { weekday: 'long' });
+}
 function clientLabel(em) {
-  const subj = (em.subject || '').replace(/^(Re:|Fwd:|RE:|FWD:)\s*/i, '').trim();
-  return subj.slice(0, 17) || em.from?.split(' ')[0] || 'Client';
+  return subjectWords(em.subject, 4);
 }
 function eventLabel(ev) {
-  const d    = new Date(ev.startRaw);
-  const diff = Math.floor((d - Date.now()) / 86400000);
-  const when = diff === 0 ? 'today' : diff === 1 ? 'tmrw' : d.toLocaleDateString('en-US', { weekday: 'short' });
-  return `${ev.title.slice(0, 10)} · ${when}`;
+  const title = ev.title.split(/\s+/).slice(0, 3).join(' ');
+  return `${title} · ${dayHint(ev.startRaw)}`;
 }
 
 export default function CreativeBoard({ data, loading }) {
