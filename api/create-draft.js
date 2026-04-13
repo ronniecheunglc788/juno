@@ -14,13 +14,30 @@ export default async function handler(req, res) {
 
   try {
     const entity = await composio.getEntity(entityId);
+
+    // If the cache didn't include threadId, resolve it now via a quick Gmail search
+    let resolvedThreadId = threadId || '';
+    if (!resolvedThreadId && subject) {
+      try {
+        const bare = subject.replace(/^(Re:|Fwd?:|FWD:|RE:)\s*/i, '').trim();
+        const sr = await entity.execute({
+          actionName: 'GMAIL_FETCH_EMAILS',
+          params: { max_results: 1, query: `subject:"${bare}"` },
+        });
+        const msg = sr?.data?.messages?.[0];
+        resolvedThreadId = msg?.threadId || msg?.thread_id || '';
+      } catch {
+        // non-fatal — create draft without threadId if lookup fails
+      }
+    }
+
     const result = await entity.execute({
       actionName: 'GMAIL_CREATE_EMAIL_DRAFT',
       params: {
         to,
         subject:   subject   || '',
         body:      body      || '',
-        ...(threadId ? { thread_id: threadId } : {}),
+        ...(resolvedThreadId ? { thread_id: resolvedThreadId } : {}),
       },
     });
 
