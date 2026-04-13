@@ -65,11 +65,13 @@ async function fetchAndPersist(entityId, userId, keys, existingTimestamps = {}) 
       entity.execute({ actionName: 'GMAIL_FETCH_EMAILS', params: { max_results: 100 } })
         .then(r => {
           fresh.emails = (r?.data?.messages || []).map(m => ({
-            subject:  m.subject || '(no subject)',
+            subject:   m.subject || '(no subject)',
             ...parseFrom(m.sender || m.from || ''),
-            date:     m.messageTimestamp || m.date || '',
-            snippet:  (typeof m.preview === 'string' ? m.preview : m.preview?.body) || m.messageText?.slice(0, 120) || '',
-            isUnread: m.labelIds?.includes('UNREAD') || false,
+            date:      m.messageTimestamp || m.date || '',
+            snippet:   (typeof m.preview === 'string' ? m.preview : m.preview?.body) || m.messageText?.slice(0, 120) || '',
+            isUnread:  m.labelIds?.includes('UNREAD') || false,
+            threadId:  m.threadId  || m.thread_id  || '',
+            messageId: m.messageId || m.id         || '',
           }));
         }).catch(err => console.error('[board-data] gmail error', err)),
 

@@ -6,7 +6,7 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST')   return res.status(405).json({ error: 'Method not allowed' });
 
-  const { entityId, to, subject, body } = req.body || {};
+  const { entityId, to, subject, body, threadId } = req.body || {};
 
   const entityErr = validateString(entityId, 'entityId', { maxLength: 200 });
   if (entityErr) return res.status(400).json({ error: entityErr });
@@ -18,8 +18,9 @@ export default async function handler(req, res) {
       actionName: 'GMAIL_CREATE_EMAIL_DRAFT',
       params: {
         to,
-        subject: subject || '',
-        body:    body    || '',
+        subject:   subject   || '',
+        body:      body      || '',
+        ...(threadId ? { thread_id: threadId } : {}),
       },
     });
 

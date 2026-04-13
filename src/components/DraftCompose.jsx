@@ -54,6 +54,7 @@ export default function DraftCompose({ email, accent = '#2563EB', onClose }) {
           to:       email?.fromEmail || email?.from || '',
           subject,
           body,
+          threadId: email?.threadId || '',
         }),
       });
       const d = await r.json();
