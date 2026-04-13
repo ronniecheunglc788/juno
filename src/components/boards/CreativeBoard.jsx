@@ -149,12 +149,16 @@ export default function CreativeBoard({ data, loading }) {
     return ns;
   }, [data]);
 
-  const aiScores = useNodeScores(baseNodes, data?.user?.archetype);
+  const { scores: aiScores, labels: aiLabels } = useNodeScores(baseNodes, data?.user?.archetype);
 
   const { nodes, edges } = useMemo(() => {
     const hasAi = Object.keys(aiScores).length > 0;
     const ns = baseNodes
-      .map(n => aiScores[n.id] != null ? { ...n, importance: aiScores[n.id] } : n)
+      .map(n => ({
+        ...n,
+        ...(aiScores[n.id] != null ? { importance: aiScores[n.id] } : {}),
+        ...(aiLabels[n.id]          ? { label:      aiLabels[n.id]  } : {}),
+      }))
       .filter(n => n.type === 'center' || !hasAi || (n.importance ?? 0) >= 0.35);
     const es = ns.slice(1).map((n, i) => ({
       source: 0, target: i+1,

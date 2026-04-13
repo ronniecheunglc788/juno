@@ -37,22 +37,28 @@ export default async function handler(req, res) {
     return parts.join(' | ');
   }).join('\n');
 
-  const prompt = `Score nodes for a student's personal intelligence graph. Higher score = closer to center = more important RIGHT NOW.
+  const prompt = `You are processing nodes for a student's personal intelligence graph.
 
 Today: ${today}
 Student: ${context}
 
-Scoring guide:
-0.9–1.0 = urgent (unread reply needed today, interview/deadline tomorrow, critical application update)
-0.6–0.8 = important this week (active project, event soon, warm contact, recent recruiting email)
-0.3–0.5 = moderate (older activity, general contacts, upcoming but not urgent)
-0.0–0.2 = low (stale, cold, informational only)
+For each node return TWO things:
+1. score (0.0–1.0): how important/urgent this is RIGHT NOW
+   0.9–1.0 = urgent (unread reply needed today, interview tomorrow, critical deadline)
+   0.6–0.8 = important this week (active project, event soon, warm contact)
+   0.3–0.5 = moderate (older activity, upcoming but not urgent)
+   0.0–0.2 = low (stale, cold, informational only)
+
+2. label (2–5 words): a specific, scannable name for this item
+   Use the raw data fields (subject, from, eventDate, language, etc.) — not just the existing label
+   Good labels: "Google SWE Interview", "AMCAS App Status", "Bio Lab Meeting", "Portfolio Redesign", "Sarah Johnson"
+   Bad labels: "Email", "Research", "Meeting", "Unread", anything vague or incomplete
 
 Nodes:
 ${nodeLines}
 
-Reply with ONLY valid JSON mapping each id to its score, nothing else:
-{"id1": 0.85, "id2": 0.4, ...}`;
+Reply with ONLY valid JSON, no explanation:
+{"id1": {"score": 0.85, "label": "Google SWE Interview"}, "id2": {"score": 0.4, "label": "Bio Lab Meeting"}, ...}`;
 
   try {
     const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -64,19 +70,30 @@ Reply with ONLY valid JSON mapping each id to its score, nothing else:
       body: JSON.stringify({
         model:       'llama-3.3-70b-versatile',
         messages:    [{ role: 'user', content: prompt }],
-        temperature: 0.2,
-        max_tokens:  600,
+        temperature: 0.3,
+        max_tokens:  1200,
       }),
     });
 
     const json  = await r.json();
     const raw   = json.choices?.[0]?.message?.content?.trim() || '{}';
     const match = raw.match(/\{[\s\S]*\}/);
-    const scores = match ? JSON.parse(match[0]) : {};
+    const parsed = match ? JSON.parse(match[0]) : {};
 
-    return res.status(200).json({ scores });
+    // parsed is { nodeId: { score, label } } — split into two maps for backwards compat
+    const scores = {}, labels = {};
+    for (const [id, val] of Object.entries(parsed)) {
+      if (typeof val === 'object' && val !== null) {
+        if (val.score != null) scores[id] = val.score;
+        if (val.label)         labels[id] = val.label;
+      } else if (typeof val === 'number') {
+        scores[id] = val; // handle old format gracefully
+      }
+    }
+
+    return res.status(200).json({ scores, labels });
   } catch (err) {
     console.error('[score-nodes]', err);
-    return res.status(200).json({ scores: {} }); // fail silently — heuristic scores stay
+    return res.status(200).json({ scores: {}, labels: {} });
   }
 }

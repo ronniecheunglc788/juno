@@ -32,18 +32,17 @@ function summarize(n) {
   }
 }
 
-// Fetches AI importance scores for a set of nodes.
-// Returns a map of { nodeId: score (0–1) }.
-// Falls back to empty object on error — heuristic importance values stay in effect.
+// Fetches AI importance scores + labels for a set of nodes.
+// Returns { scores: { nodeId: 0–1 }, labels: { nodeId: "short label" } }
+// Falls back to empty objects on error — heuristic values stay in effect.
 export function useNodeScores(nodes, archetype) {
-  const [scores, setScores]   = useState({});
-  const lastKeyRef            = useRef(null);
+  const [result, setResult] = useState({ scores: {}, labels: {} });
+  const lastKeyRef          = useRef(null);
 
   useEffect(() => {
     const scorable = (nodes || []).filter(n => n.type !== 'center');
     if (!scorable.length || !archetype) return;
 
-    // Only re-score if the set of node IDs actually changed
     const key = scorable.map(n => n.id).sort().join(',');
     if (key === lastKeyRef.current) return;
     lastKeyRef.current = key;
@@ -57,11 +56,14 @@ export function useNodeScores(nodes, archetype) {
       signal:  ctrl.signal,
     })
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
-      .then(({ scores }) => { if (scores) setScores(scores); })
-      .catch(() => {}); // silent — heuristic scores stay if AI fails
+      .then(data => {
+        if (data.scores || data.labels)
+          setResult({ scores: data.scores || {}, labels: data.labels || {} });
+      })
+      .catch(() => {});
 
     return () => ctrl.abort();
   }, [nodes, archetype]);
 
-  return scores;
+  return result;
 }
