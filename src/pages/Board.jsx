@@ -271,11 +271,40 @@ export default function Board() {
     try { u = JSON.parse(saved); } catch { localStorage.removeItem('breeze_user'); navigate('/join'); return; }
     setUser(u);
 
-    fetch(`/api/board-data?userId=${u.id}&entityId=${u.entity_id}`)
+    const url = `/api/board-data?userId=${u.id}&entityId=${u.entity_id}`;
+
+    // Initial load
+    fetch(url)
       .then(r => r.json())
       .then(d => { if (d.error) throw new Error(d.error); setData(d); })
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
+
+    // Silent background refresh — updates data without showing a loading state
+    let lastFetch = Date.now();
+    function silentRefresh() {
+      lastFetch = Date.now();
+      fetch(url)
+        .then(r => r.json())
+        .then(d => { if (!d.error) setData(d); })
+        .catch(() => {}); // never surface background errors to the user
+    }
+
+    // Re-fetch every 5 minutes (matches email cache TTL)
+    const interval = setInterval(silentRefresh, 5 * 60 * 1000);
+
+    // Re-fetch when the user returns to this tab after being away
+    function onVisibility() {
+      if (document.visibilityState === 'visible' && Date.now() - lastFetch > 60 * 1000) {
+        silentRefresh();
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, [navigate]);
 
   function handleLogout() {
