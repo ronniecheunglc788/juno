@@ -58,7 +58,10 @@ export default function DraftCompose({ email, accent = '#2563EB', onClose }) {
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || 'Failed to create draft');
-      window.open('https://mail.google.com/#drafts', '_blank');
+      const gmailUrl = d.messageId
+        ? `https://mail.google.com/mail/u/0/#drafts/${d.messageId}`
+        : 'https://mail.google.com/mail/u/0/#drafts';
+      window.open(gmailUrl, '_blank');
       onClose();
     } catch (err) {
       setError(err.message);

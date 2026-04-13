@@ -23,7 +23,18 @@ export default async function handler(req, res) {
       },
     });
 
-    return res.status(200).json({ success: true, data: result?.data });
+    // Extract the message ID so the client can deep-link straight to the draft
+    const raw = result?.data || result || {};
+    const messageId =
+      raw.messageId ||
+      raw.id        ||
+      raw.message?.id ||
+      raw.data?.messageId ||
+      raw.data?.id ||
+      raw.data?.message?.id ||
+      null;
+
+    return res.status(200).json({ success: true, messageId, data: raw });
   } catch (err) {
     return internalError(res, err, 'Failed to create Gmail draft');
   }
