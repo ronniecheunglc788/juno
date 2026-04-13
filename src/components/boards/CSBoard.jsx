@@ -60,6 +60,21 @@ function isRecruit(em) {
   return ['google','meta','amazon','apple','microsoft','stripe','openai','anthropic','coinbase',
     'recruiter','recruiting','offer','internship','interview','new grad'].some(k => s.includes(k));
 }
+function repoLabel(r) {
+  const days = staleDays(r.lastCommit);
+  const hint = days === 0 ? 'today' : days < 7 ? `${days}d` : days < 30 ? `${Math.floor(days/7)}w` : '';
+  return hint ? `${r.name.slice(0, 10)} · ${hint}` : r.name;
+}
+function recruitLabel(em) {
+  const subj = (em.subject || '').replace(/^(Re:|Fwd:|RE:|FWD:)\s*/i, '').trim();
+  return subj.slice(0, 17) || em.from?.split(' ')[0] || 'Recruiting';
+}
+function eventLabel(ev) {
+  const d    = new Date(ev.startRaw);
+  const diff = Math.floor((d - Date.now()) / 86400000);
+  const when = diff === 0 ? 'today' : diff === 1 ? 'tmrw' : d.toLocaleDateString('en-US', { weekday: 'short' });
+  return `${ev.title.slice(0, 10)} · ${when}`;
+}
 
 export default function CSBoard({ data, loading }) {
   if (loading) return <Loading />;
@@ -67,9 +82,9 @@ export default function CSBoard({ data, loading }) {
 
   const baseNodes = useMemo(() => {
     const firstName = data?.user?.name?.split(' ')[0] || 'you';
-    const repos     = (data?.github   || []).slice(0, 9);
-    const recruits  = (data?.emails   || []).filter(isRecruit).slice(0, 8);
-    const events    = (data?.calendar || []).slice(0, 5);
+    const repos     = (data?.github   || []).slice(0, 12);
+    const recruits  = (data?.emails   || []).filter(isRecruit).slice(0, 20);
+    const events    = (data?.calendar || []).slice(0, 6);
     const notes     = (data?.notion   || []).slice(0, 5);
 
     const ns = [{ id: 'center', type: 'center', label: firstName, size: 20 }];
@@ -81,7 +96,7 @@ export default function CSBoard({ data, loading }) {
       const imp   = stale ? 0.15 : Math.max(0, 1 - days / 30);
       ns.push({
         id: `repo-${i}`, type: stale ? 'repo-stale' : 'repo',
-        label: r.name, size: stale ? 6 : Math.round(8 + imp * 4),
+        label: repoLabel(r), size: stale ? 6 : Math.round(8 + imp * 4),
         angle, dist: 300 + i*28, phase: i*0.65,
         importance: imp,
         statusLabel: stale ? 'Stale' : days < 3 ? 'Active' : null,
@@ -94,7 +109,7 @@ export default function CSBoard({ data, loading }) {
       const imp   = em.isUnread ? 0.85 : 0.4;
       ns.push({
         id: `recruit-${i}`, type: em.isUnread ? 'recruit' : 'recruit-r',
-        label: em.from?.split(' ').slice(0,2).join(' '),
+        label: recruitLabel(em),
         size: em.isUnread ? 10 : 7,
         angle, dist: 290 + i*26, phase: i*0.9,
         importance: imp,
@@ -107,7 +122,7 @@ export default function CSBoard({ data, loading }) {
       const angle = Math.PI/2 + (i - events.length/2) * 0.28;
       const imp   = Math.max(0, 1 - i / events.length) * 0.6;
       ns.push({
-        id: `ev-${i}`, type: 'event', label: ev.title, size: 7,
+        id: `ev-${i}`, type: 'event', label: eventLabel(ev), size: 7,
         angle, dist: 330 + i*24, phase: i*1.1,
         importance: imp,
         rawData: ev,
@@ -130,9 +145,10 @@ export default function CSBoard({ data, loading }) {
   const aiScores = useNodeScores(baseNodes, data?.user?.archetype);
 
   const { nodes, edges } = useMemo(() => {
-    const ns = baseNodes.map(n =>
-      aiScores[n.id] != null ? { ...n, importance: aiScores[n.id] } : n
-    );
+    const hasAi = Object.keys(aiScores).length > 0;
+    const ns = baseNodes
+      .map(n => aiScores[n.id] != null ? { ...n, importance: aiScores[n.id] } : n)
+      .filter(n => n.type === 'center' || !hasAi || (n.importance ?? 0) >= 0.35);
     const es = ns.slice(1).map((n, i) => ({
       source: 0, target: i+1,
       strong: n.type === 'repo' || n.type === 'recruit',

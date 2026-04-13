@@ -45,6 +45,22 @@ function daysAgoN(d) {
   if (!d) return 999;
   return Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
 }
+function contactLabel(c) {
+  const name = c.name?.split(' ')[0] || 'Contact';
+  const days = daysAgoN(c.date);
+  const hint = days === 0 ? 'today' : days === 1 ? 'yest' : days < 7 ? `${days}d` : '';
+  return hint ? `${name} · ${hint}` : name;
+}
+function oppLabel(op) {
+  const subj = (op.subject || '').replace(/^(Re:|Fwd:|RE:|FWD:)\s*/i, '').trim();
+  return subj.slice(0, 17) || op.from?.split(' ')[0] || 'Opportunity';
+}
+function eventLabel(ev) {
+  const d    = new Date(ev.startRaw);
+  const diff = Math.floor((d - Date.now()) / 86400000);
+  const when = diff === 0 ? 'today' : diff === 1 ? 'tmrw' : d.toLocaleDateString('en-US', { weekday: 'short' });
+  return `${ev.title.slice(0, 10)} · ${when}`;
+}
 
 function buildContacts(emails) {
   const map = {};
@@ -71,8 +87,8 @@ export default function BusinessBoard({ data, loading }) {
   const baseNodes = useMemo(() => {
     const firstName = data?.user?.name?.split(' ')[0] || 'you';
     const contacts  = buildContacts(data?.emails || []);
-    const opps      = (data?.emails || []).filter(isOpp).slice(0, 7);
-    const events    = (data?.calendar || []).slice(0, 5);
+    const opps      = (data?.emails || []).filter(isOpp).slice(0, 15);
+    const events    = (data?.calendar || []).slice(0, 6);
 
     const ns = [{ id: 'center', type: 'center', label: firstName, size: 20 }];
 
@@ -84,7 +100,7 @@ export default function BusinessBoard({ data, loading }) {
       const warmth= days < 5 ? 'Active' : days < 14 ? `${days}d ago` : 'Cold';
       const imp   = days < 5 ? 0.9 : days < 14 ? 0.55 : 0.2;
       ns.push({
-        id: `c-${i}`, type, label: c.name?.split(' ')[0] || c.name,
+        id: `c-${i}`, type, label: contactLabel(c),
         size, angle, dist: 270 + (i % 4) * 60, phase: i * 0.55,
         innerRing: true,
         importance: imp,
@@ -98,7 +114,7 @@ export default function BusinessBoard({ data, loading }) {
       const imp   = op.isUnread ? 0.85 : 0.5;
       ns.push({
         id: `opp-${i}`, type: 'opp', shape: 'diamond',
-        label: op.from?.split(' ').slice(0,2).join(' '),
+        label: oppLabel(op),
         size: 9, angle, dist: 370 + i*24, phase: i*1.1,
         importance: imp,
         statusLabel: op.isUnread ? 'Unread' : null,
@@ -110,7 +126,7 @@ export default function BusinessBoard({ data, loading }) {
       const angle = Math.PI / 3 + (i - events.length/2) * 0.24;
       const imp   = Math.max(0, 1 - i / events.length) * 0.5;
       ns.push({
-        id: `ev-${i}`, type: 'event', label: ev.title, size: 7,
+        id: `ev-${i}`, type: 'event', label: eventLabel(ev), size: 7,
         angle, dist: 340 + i*20, phase: i*0.9,
         importance: imp,
         rawData: ev,
@@ -123,9 +139,10 @@ export default function BusinessBoard({ data, loading }) {
   const aiScores = useNodeScores(baseNodes, data?.user?.archetype);
 
   const { nodes, edges } = useMemo(() => {
-    const ns = baseNodes.map(n =>
-      aiScores[n.id] != null ? { ...n, importance: aiScores[n.id] } : n
-    );
+    const hasAi = Object.keys(aiScores).length > 0;
+    const ns = baseNodes
+      .map(n => aiScores[n.id] != null ? { ...n, importance: aiScores[n.id] } : n)
+      .filter(n => n.type === 'center' || !hasAi || (n.importance ?? 0) >= 0.35);
     const es = ns.slice(1).map((n, i) => ({
       source: 0, target: i+1,
       strong: n.type === 'contact-warm' || n.type === 'opp',

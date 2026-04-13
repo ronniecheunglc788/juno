@@ -50,9 +50,21 @@ function catOf(subject) {
   return 'other';
 }
 
-const CLUSTER_A = { app: -Math.PI/2, res: Math.PI/6, acad: Math.PI*5/6, other: Math.PI };
-// Importance by category: app & res most important for premed
-const CAT_IMP   = { app: 0.85, res: 0.7, acad: 0.5, other: 0.25 };
+const CLUSTER_A  = { app: -Math.PI/2, res: Math.PI/6, acad: Math.PI*5/6, other: Math.PI };
+const CAT_IMP    = { app: 0.85, res: 0.7, acad: 0.5, other: 0.25 };
+const CAT_PREFIX = { app: 'App', res: 'Res', acad: 'Class', other: '' };
+
+function emailLabel(em, cat) {
+  const subj   = (em.subject || '').replace(/^(Re:|Fwd:|RE:|FWD:)\s*/i, '').trim();
+  const prefix = CAT_PREFIX[cat];
+  return prefix ? `${prefix} · ${subj.slice(0, 12)}` : subj.slice(0, 17) || em.from?.split(' ')[0] || 'Email';
+}
+function eventLabel(ev) {
+  const d    = new Date(ev.startRaw);
+  const diff = Math.floor((d - Date.now()) / 86400000);
+  const when = diff === 0 ? 'today' : diff === 1 ? 'tmrw' : d.toLocaleDateString('en-US', { weekday: 'short' });
+  return `${ev.title.slice(0, 10)} · ${when}`;
+}
 
 export default function PremedBoard({ data, loading }) {
   if (loading) return <Loading />;
@@ -67,7 +79,7 @@ export default function PremedBoard({ data, loading }) {
     const ns = [{ id: 'center', type: 'center', label: firstName, size: 20 }];
 
     const catCount = { app: 0, res: 0, acad: 0, other: 0 };
-    emails.slice(0, 16).forEach((em, i) => {
+    emails.slice(0, 30).forEach((em, i) => {
       const cat = catOf(em.subject);
       const ci  = catCount[cat]++;
       const base = CLUSTER_A[cat];
@@ -77,7 +89,7 @@ export default function PremedBoard({ data, loading }) {
       const imp = em.isUnread ? Math.min(1, baseImp + 0.15) : baseImp * 0.85;
       ns.push({
         id: `em-${i}`, type: cat,
-        label: em.from?.split(' ').slice(0,2).join(' ') || 'Email',
+        label: emailLabel(em, cat),
         size: em.isUnread ? 10 : 7,
         angle, dist: 275 + ci * 34, phase: i * 0.5,
         importance: imp,
@@ -90,7 +102,7 @@ export default function PremedBoard({ data, loading }) {
       const angle = -Math.PI/6 + (i - events.length/2) * 0.24;
       const imp   = Math.max(0, 1 - i / events.length) * 0.55;
       ns.push({
-        id: `ev-${i}`, type: 'event', label: ev.title, size: 7,
+        id: `ev-${i}`, type: 'event', label: eventLabel(ev), size: 7,
         angle, dist: 340 + i*26, phase: i*1.1,
         importance: imp,
         rawData: ev,
@@ -113,9 +125,10 @@ export default function PremedBoard({ data, loading }) {
   const aiScores = useNodeScores(baseNodes, data?.user?.archetype);
 
   const { nodes, edges } = useMemo(() => {
-    const ns = baseNodes.map(n =>
-      aiScores[n.id] != null ? { ...n, importance: aiScores[n.id] } : n
-    );
+    const hasAi = Object.keys(aiScores).length > 0;
+    const ns = baseNodes
+      .map(n => aiScores[n.id] != null ? { ...n, importance: aiScores[n.id] } : n)
+      .filter(n => n.type === 'center' || !hasAi || (n.importance ?? 0) >= 0.35);
     const es = ns.slice(1).map((n, i) => ({
       source: 0, target: i+1,
       strong: n.type === 'app' || n.type === 'res',

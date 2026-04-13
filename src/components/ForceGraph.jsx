@@ -264,7 +264,7 @@ export default function ForceGraph({ nodes: nodeDefs, edges: edgeDefs, theme, on
         }
 
         if (n.label) {
-          const maxCh = 14;
+          const maxCh = 18;
           const lbl   = n.label.length > maxCh ? n.label.slice(0, maxCh-1) + '…' : n.label;
           ctx.font      = theme.labelFont ?? '13px "DM Sans",system-ui,-apple-system,sans-serif';
           ctx.fillStyle = theme.label ?? 'rgba(255,255,255,0.4)';

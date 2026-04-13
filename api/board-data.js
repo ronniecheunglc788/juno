@@ -62,7 +62,7 @@ async function fetchAndPersist(entityId, userId, keys, existingTimestamps = {}) 
   await Promise.allSettled([
 
     keys.includes('emails') &&
-      entity.execute({ actionName: 'GMAIL_FETCH_EMAILS', params: { max_results: 30 } })
+      entity.execute({ actionName: 'GMAIL_FETCH_EMAILS', params: { max_results: 100 } })
         .then(r => {
           fresh.emails = (r?.data?.messages || []).map(m => ({
             subject:  m.subject || '(no subject)',
