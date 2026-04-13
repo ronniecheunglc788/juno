@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
-import BoardShell from '../BoardShell';
-import ForceGraph from '../ForceGraph';
-import NodeDetail from '../NodeDetail';
+import BoardShell    from '../BoardShell';
+import ForceGraph    from '../ForceGraph';
+import NodeDetail    from '../NodeDetail';
+import DraftCompose  from '../DraftCompose';
 import { useNodeScores } from '../../hooks/useNodeScores';
 
 // ── Creative theme: stars, organic curves, particle field ─────────
@@ -73,7 +74,8 @@ function eventLabel(ev) {
 
 export default function CreativeBoard({ data, loading }) {
   if (loading) return <Loading />;
-  const [selected, setSelected] = useState(null);
+  const [selected,   setSelected]   = useState(null);
+  const [draftEmail, setDraftEmail] = useState(null);
 
   const baseNodes = useMemo(() => {
     const firstName = data?.user?.name?.split(' ')[0] || 'you';
@@ -170,12 +172,17 @@ export default function CreativeBoard({ data, loading }) {
   }, [baseNodes, aiScores]);
 
   return (
-    <BoardShell themeKey="creative" data={data} loading={loading}>
-      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-        <ForceGraph nodes={nodes} edges={edges} theme={THEME} onNodeClick={setSelected} />
-        <NodeDetail node={selected} accent="#7C3AED" onClose={() => setSelected(null)} />
-      </div>
-    </BoardShell>
+    <>
+      <BoardShell themeKey="creative" data={data} loading={loading} onInboxEmailClick={setDraftEmail}>
+        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+          <ForceGraph nodes={nodes} edges={edges} theme={THEME} onNodeClick={setSelected} />
+          <NodeDetail node={selected} accent="#7C3AED" onClose={() => setSelected(null)} onDraftReply={setDraftEmail} />
+        </div>
+      </BoardShell>
+      {draftEmail && (
+        <DraftCompose email={draftEmail} accent="#7C3AED" onClose={() => setDraftEmail(null)} />
+      )}
+    </>
   );
 }
 

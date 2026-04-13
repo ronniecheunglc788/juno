@@ -1,6 +1,9 @@
 const FONT  = "'DM Sans','Inter',system-ui,sans-serif";
 
-export default function NodeDetail({ node, accent, onClose }) {
+// Node types where it makes sense to draft a reply
+const REPLYABLE = new Set(['recruit', 'recruit-r', 'opp', 'app', 'res', 'acad', 'other', 'client']);
+
+export default function NodeDetail({ node, accent, onClose, onDraftReply }) {
   if (!node) return null;
 
   return (
@@ -72,15 +75,17 @@ export default function NodeDetail({ node, accent, onClose }) {
         </button>
       </div>
 
-      <NodeContent node={node} accent={accent} />
+      <NodeContent node={node} accent={accent} onDraftReply={onDraftReply} />
     </div>
   );
 }
 
-function NodeContent({ node, accent }) {
+function NodeContent({ node, accent, onDraftReply }) {
   const d      = node.rawData || {};
   const title  = d.name || d.subject || d.title || node.label || '—';
   const fields = getFields(node, d).filter(Boolean);
+
+  const canDraft = onDraftReply && REPLYABLE.has(node.type) && (d.from || d.fromEmail);
 
   return (
     <div style={{ position: 'relative' }}>
@@ -141,6 +146,46 @@ function NodeContent({ node, accent }) {
           }} />
           {node.statusLabel}
         </div>
+      )}
+
+      {canDraft && (
+        <button
+          onClick={() => onDraftReply(d)}
+          style={{
+            marginTop:     14,
+            width:         '100%',
+            padding:       '8px 0',
+            borderRadius:  8,
+            border:        `1px solid ${accent}28`,
+            background:    `${accent}08`,
+            color:         accent,
+            fontSize:      11,
+            fontWeight:    600,
+            cursor:        'pointer',
+            fontFamily:    FONT,
+            letterSpacing: '0.4px',
+            textTransform: 'uppercase',
+            transition:    'background 0.14s, border-color 0.14s',
+            display:       'flex',
+            alignItems:    'center',
+            justifyContent:'center',
+            gap:           6,
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background   = `${accent}14`;
+            e.currentTarget.style.borderColor  = `${accent}48`;
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background   = `${accent}08`;
+            e.currentTarget.style.borderColor  = `${accent}28`;
+          }}
+        >
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+            <path d="M1 10L10 1M10 1H4M10 1V7"
+              stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          Draft Reply
+        </button>
       )}
     </div>
   );

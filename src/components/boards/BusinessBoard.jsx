@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
-import BoardShell from '../BoardShell';
-import ForceGraph from '../ForceGraph';
-import NodeDetail from '../NodeDetail';
+import BoardShell    from '../BoardShell';
+import ForceGraph    from '../ForceGraph';
+import NodeDetail    from '../NodeDetail';
+import DraftCompose  from '../DraftCompose';
 import { useNodeScores } from '../../hooks/useNodeScores';
 
 // ── Business theme: network graph, bezier, radial spokes ─────────
@@ -89,7 +90,8 @@ function isOpp(em) {
 
 export default function BusinessBoard({ data, loading }) {
   if (loading) return <Loading />;
-  const [selected, setSelected] = useState(null);
+  const [selected,   setSelected]   = useState(null);
+  const [draftEmail, setDraftEmail] = useState(null);
 
   const baseNodes = useMemo(() => {
     const firstName = data?.user?.name?.split(' ')[0] || 'you';
@@ -164,12 +166,17 @@ export default function BusinessBoard({ data, loading }) {
   }, [baseNodes, aiScores]);
 
   return (
-    <BoardShell themeKey="business" data={data} loading={loading}>
-      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-        <ForceGraph nodes={nodes} edges={edges} theme={THEME} onNodeClick={setSelected} />
-        <NodeDetail node={selected} accent="#B45309" onClose={() => setSelected(null)} />
-      </div>
-    </BoardShell>
+    <>
+      <BoardShell themeKey="business" data={data} loading={loading} onInboxEmailClick={setDraftEmail}>
+        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+          <ForceGraph nodes={nodes} edges={edges} theme={THEME} onNodeClick={setSelected} />
+          <NodeDetail node={selected} accent="#B45309" onClose={() => setSelected(null)} onDraftReply={setDraftEmail} />
+        </div>
+      </BoardShell>
+      {draftEmail && (
+        <DraftCompose email={draftEmail} accent="#B45309" onClose={() => setDraftEmail(null)} />
+      )}
+    </>
   );
 }
 

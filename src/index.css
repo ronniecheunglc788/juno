@@ -70,3 +70,13 @@ body {
 .dot-1 { animation: bounce-dot 1.2s infinite; animation-delay: 0s; }
 .dot-2 { animation: bounce-dot 1.2s infinite; animation-delay: 0.2s; }
 .dot-3 { animation: bounce-dot 1.2s infinite; animation-delay: 0.4s; }
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes compose-in {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

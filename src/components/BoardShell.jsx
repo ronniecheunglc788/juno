@@ -115,7 +115,7 @@ function AmbientLight({ accent }) {
   return <div ref={ref} style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0 }} />;
 }
 
-export default function BoardShell({ children, data, themeKey }) {
+export default function BoardShell({ children, data, themeKey, onInboxEmailClick }) {
   const [tab,      setTab]      = useState('schedule');
   const [insights,     setInsights]     = useState(null);  // null=loading
   const [insightError, setInsightError] = useState('');
@@ -229,7 +229,15 @@ export default function BoardShell({ children, data, themeKey }) {
             unread.length === 0 ? (
               <div style={{ color: 'rgba(0,0,0,0.28)', fontSize: 13, lineHeight: 1.8, fontWeight: 300 }}>No unread emails right now.</div>
             ) : (
-              unread.map((em, i) => <EmailRow key={i} from={em.from} subject={em.subject} accent={accent} />)
+              unread.map((em, i) => (
+                <EmailRow
+                  key={i}
+                  from={em.from}
+                  subject={em.subject}
+                  accent={accent}
+                  onDraftClick={onInboxEmailClick ? () => onInboxEmailClick(em) : undefined}
+                />
+              ))
             )
           )}
         </div>
@@ -440,10 +448,15 @@ function EventRow({ title, time, accent }) {
   );
 }
 
-function EmailRow({ from, subject, accent }) {
+function EmailRow({ from, subject, accent, onDraftClick }) {
+  const [hovered, setHovered] = useState(false);
   const initials = (from || '?').split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase();
   return (
-    <div style={{ display: 'flex', gap: 10, marginBottom: 14, alignItems: 'flex-start' }}>
+    <div
+      style={{ display: 'flex', gap: 10, marginBottom: 14, alignItems: 'flex-start', position: 'relative' }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
       <div style={{
         width: 28, height: 28, borderRadius: '50%', background: `${accent}10`,
         border: `1px solid ${accent}28`, display: 'flex', alignItems: 'center',
@@ -452,7 +465,7 @@ function EmailRow({ from, subject, accent }) {
       }}>
         {initials}
       </div>
-      <div style={{ minWidth: 0 }}>
+      <div style={{ minWidth: 0, flex: 1 }}>
         <div style={{ fontSize: 11, fontWeight: 500, color: 'rgba(0,0,0,0.4)', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {from}
         </div>
@@ -460,6 +473,32 @@ function EmailRow({ from, subject, accent }) {
           {subject}
         </div>
       </div>
+      {onDraftClick && hovered && (
+        <button
+          onClick={e => { e.stopPropagation(); onDraftClick(); }}
+          style={{
+            position:     'absolute',
+            right:        0,
+            top:          '50%',
+            transform:    'translateY(-50%)',
+            padding:      '4px 10px',
+            borderRadius: 6,
+            border:       'none',
+            background:   accent,
+            color:        '#FFFFFF',
+            fontSize:     10,
+            fontWeight:   600,
+            cursor:       'pointer',
+            fontFamily:   FONT,
+            letterSpacing:'0.3px',
+            whiteSpace:   'nowrap',
+            boxShadow:    `0 2px 10px ${accent}40`,
+            animation:    'nodeFadeIn 0.12s ease',
+          }}
+        >
+          Reply
+        </button>
+      )}
     </div>
   );
 }
