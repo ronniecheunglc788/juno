@@ -1,19 +1,33 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import PremedBoard   from '../components/boards/PremedBoard';
 import EngineerBoard from '../components/boards/CSBoard';
 import BusinessBoard from '../components/boards/BusinessBoard';
 import CreativeBoard from '../components/boards/CreativeBoard';
+import TendrilBoard  from '../components/boards/TendrilBoard';
+import RootBoard     from '../components/boards/RootBoard';
+import FireflyBoard  from '../components/boards/FireflyBoard';
+import CurrentBoard  from '../components/boards/CurrentBoard';
+import MossBoard     from '../components/boards/MossBoard';
+import SeedlingBoard from '../components/boards/SeedlingBoard';
+import { MOCK_PROFILES } from '../data/mockProfiles';
 
 const ARCHETYPES = [
-  { key: 'engineer', label: 'Engineer', color: '#2563EB' },
-  { key: 'business', label: 'Business', color: '#B45309' },
-  { key: 'premed',   label: 'Pre-Med',  color: '#059669' },
-  { key: 'creative', label: 'Creative', color: '#7C3AED' },
+  { key: 'tendril',  label: 'The Tendril',  color: '#059669' },
+  { key: 'root',     label: 'The Root',     color: '#1D4ED8' },
+  { key: 'firefly',  label: 'The Firefly',  color: '#D97706' },
+  { key: 'current',  label: 'The Current',  color: '#DC2626' },
+  { key: 'moss',     label: 'The Moss',     color: '#0F766E' },
+  { key: 'seedling', label: 'The Seedling', color: '#7C3AED' },
 ];
 
 const ARCH_MAP = Object.fromEntries(ARCHETYPES.map(a => [a.key, a]));
-ARCH_MAP['cs'] = ARCH_MAP['engineer'];
+// Keep legacy keys working for existing users
+ARCH_MAP['engineer'] = { key: 'engineer', label: 'Engineer', color: '#2563EB' };
+ARCH_MAP['cs']       = ARCH_MAP['engineer'];
+ARCH_MAP['business'] = { key: 'business', label: 'Business', color: '#B45309' };
+ARCH_MAP['premed']   = { key: 'premed',   label: 'Pre-Med',  color: '#059669' };
+ARCH_MAP['creative'] = { key: 'creative', label: 'Creative', color: '#7C3AED' };
 
 function UserNav({ user, onLogout, onArchetypeChange }) {
   const [menuOpen,      setMenuOpen]      = useState(false);
@@ -259,12 +273,23 @@ const menuItemStyle = {
 
 export default function Board() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [user, setUser]       = useState(null);
   const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
 
   useEffect(() => {
+    // ── Demo / mock mode: ?mock=tendril loads simulated data ─────────
+    const mockKey = searchParams.get('mock');
+    if (mockKey && MOCK_PROFILES[mockKey]) {
+      const profile = MOCK_PROFILES[mockKey];
+      setUser(profile.user);
+      setData(profile);
+      setLoading(false);
+      return;
+    }
+
     const saved = localStorage.getItem('breeze_user');
     if (!saved) { navigate('/join'); return; }
     let u;
@@ -305,7 +330,7 @@ export default function Board() {
       clearInterval(interval);
       document.removeEventListener('visibilitychange', onVisibility);
     };
-  }, [navigate]);
+  }, [navigate, searchParams]);
 
   function handleLogout() {
     localStorage.removeItem('breeze_user');
@@ -321,6 +346,12 @@ export default function Board() {
 
   const arch  = user.archetype;
   const BoardComponent =
+    arch === 'tendril'  ? TendrilBoard  :
+    arch === 'root'     ? RootBoard     :
+    arch === 'firefly'  ? FireflyBoard  :
+    arch === 'current'  ? CurrentBoard  :
+    arch === 'moss'     ? MossBoard     :
+    arch === 'seedling' ? SeedlingBoard :
     arch === 'premed'   ? PremedBoard   :
     arch === 'business' ? BusinessBoard :
     arch === 'creative' ? CreativeBoard :

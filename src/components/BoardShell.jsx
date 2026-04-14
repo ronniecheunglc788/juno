@@ -15,6 +15,13 @@ const ACCENT = {
   business: '#B45309',
   premed:   '#059669',
   creative: '#7C3AED',
+  // New archetypes
+  tendril:  '#059669',
+  root:     '#1D4ED8',
+  firefly:  '#D97706',
+  current:  '#DC2626',
+  moss:     '#0F766E',
+  seedling: '#7C3AED',
 };
 
 const BG_TINT = {
@@ -22,6 +29,13 @@ const BG_TINT = {
   business: 'rgba(255,251,240,0.8)',
   premed:   'rgba(239,253,245,0.8)',
   creative: 'rgba(245,240,255,0.8)',
+  // New archetypes
+  tendril:  'rgba(236,253,245,0.8)',
+  root:     'rgba(239,246,255,0.8)',
+  firefly:  'rgba(255,251,235,0.8)',
+  current:  'rgba(255,245,245,0.8)',
+  moss:     'rgba(240,253,250,0.8)',
+  seedling: 'rgba(250,248,255,0.8)',
 };
 
 const FONT  = "'DM Sans','Inter',system-ui,sans-serif";
