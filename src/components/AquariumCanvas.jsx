@@ -17,6 +17,114 @@ const ANIMAL_COLOR = {
 };
 function tColor(type) { return ANIMAL_COLOR[type] || '#44AACC'; }
 
+// ── Kelp forest ───────────────────────────────────────────────────────
+function genKelp(W, H) {
+  const floor = H * 0.82;
+  // Cluster in one area (left-center, feels like a "kelp forest zone")
+  const zoneX = W * 0.62;
+  return Array.from({ length: 7 }, (_, i) => {
+    const h = H * (0.48 + Math.random() * 0.28); // tall — reaches 48-76% of scene height
+    const frondCount = 5 + Math.floor(Math.random() * 4);
+    return {
+      x:     zoneX + (i - 3) * (28 + Math.random() * 18) + (Math.random() - 0.5) * 14,
+      y:     floor,
+      h,
+      phase: Math.random() * Math.PI * 2,
+      // Fronds at different heights along the stipe
+      fronds: Array.from({ length: frondCount }, (_, k) => ({
+        t:     0.18 + (k / frondCount) * 0.72, // position along stipe (0=base, 1=tip)
+        side:  k % 2 === 0 ? 1 : -1,           // alternating sides
+        len:   18 + Math.random() * 28,
+        phase: Math.random() * Math.PI * 2,
+        width: 6 + Math.random() * 8,
+      })),
+    };
+  });
+}
+
+function drawKelp(ctx, k, frame, daylight) {
+  const { x, y, h, phase, fronds } = k;
+  const nightGlow = Math.max(0, 1 - daylight * 1.8);
+  // Primary stipe sway (slower and bigger than seaweed)
+  const mainSway = Math.sin(frame * 0.012 + phase) * h * 0.035;
+
+  ctx.save();
+
+  // Stipe — thick tapered trunk
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  // Use bezier so stipe curves organically with the sway
+  const tipX = x + mainSway;
+  const tipY = y - h;
+  ctx.bezierCurveTo(
+    x + mainSway * 0.25, y - h * 0.35,
+    tipX - mainSway * 0.1, tipY + h * 0.25,
+    tipX, tipY
+  );
+  const stipeGrad = ctx.createLinearGradient(x, y, x, y - h);
+  stipeGrad.addColorStop(0,   `hsl(130,38%,${nightGlow > 0.1 ? 28 : 18}%)`);
+  stipeGrad.addColorStop(0.5, `hsl(135,42%,${nightGlow > 0.1 ? 22 : 14}%)`);
+  stipeGrad.addColorStop(1,   `hsl(140,45%,${nightGlow > 0.1 ? 18 : 12}%)`);
+  ctx.strokeStyle = stipeGrad;
+  ctx.lineWidth = 4.5;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  // Fronds — blade-shaped leaves branching off stipe
+  fronds.forEach(fr => {
+    // Position along the stipe curve
+    const t  = fr.t;
+    const sx = x + mainSway * t;
+    const sy = y - h * t;
+    const frSway = Math.sin(frame * 0.018 + phase + fr.phase + t * 2.2) * fr.len * 0.28;
+
+    // Frond base direction (horizontal with the side + sway influence)
+    const bx = sx + fr.side * (fr.len * 0.55 + frSway);
+    const by = sy - fr.len * 0.22;
+    // Tip position with a downward droop (buoyancy isn't enough at tip)
+    const tx2 = sx + fr.side * (fr.len + frSway * 1.3);
+    const ty2 = sy + fr.len * 0.12;
+
+    // Frond shape as filled path (blade ellipse approximated by bezier)
+    ctx.beginPath();
+    ctx.moveTo(sx + fr.side * 3, sy);
+    ctx.bezierCurveTo(
+      bx, by - fr.width * 0.5,
+      tx2 - fr.side * fr.len * 0.2, ty2 - fr.width * 0.3,
+      tx2, ty2
+    );
+    ctx.bezierCurveTo(
+      tx2 - fr.side * fr.len * 0.2, ty2 + fr.width * 0.4,
+      bx, by + fr.width * 0.6,
+      sx + fr.side * 3, sy
+    );
+    const frondAlpha = 0.72 + nightGlow * 0.15;
+    ctx.fillStyle = `hsla(140,${40 + nightGlow * 15}%,${nightGlow > 0.1 ? 26 : 16}%,${frondAlpha})`;
+    ctx.fill();
+
+    // Mid-rib
+    ctx.beginPath();
+    ctx.moveTo(sx + fr.side * 2, sy);
+    ctx.quadraticCurveTo(bx * 0.7 + tx2 * 0.3, (by + ty2) * 0.5, tx2, ty2);
+    ctx.strokeStyle = `hsla(140,35%,${nightGlow > 0.05 ? 35 : 22}%,0.5)`;
+    ctx.lineWidth = 0.8; ctx.stroke();
+
+    // Night glow on frond tips
+    if (nightGlow > 0.06) {
+      ctx.beginPath(); ctx.arc(tx2, ty2, 1.8 + nightGlow, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(155,70%,55%,${nightGlow * 0.38})`; ctx.fill();
+    }
+  });
+
+  // Kelp tip — pneumatocyst float ball
+  const tipX2 = x + mainSway;
+  const tipY2 = y - h;
+  ctx.beginPath(); ctx.arc(tipX2, tipY2, 3.5, 0, Math.PI * 2);
+  ctx.fillStyle = `hsla(145,50%,${nightGlow > 0.1 ? 40 : 25}%,0.85)`; ctx.fill();
+
+  ctx.restore();
+}
+
 // ── Scene generation ───────────────────────────────────────────────
 function genCoral(W, H) {
   const floor = H * 0.82;
@@ -45,8 +153,8 @@ function genSeaweed(W, H) {
 }
 
 function genRays(W) {
-  return Array.from({ length: 9 }, (_, i) => ({
-    x:     (i / 9) * W * 1.12 - W * 0.06 + (Math.random() - 0.5) * 60,
+  return Array.from({ length: 12 }, (_, i) => ({  // increased from 9 → 12 rays
+    x:     (i / 12) * W * 1.14 - W * 0.07 + (Math.random() - 0.5) * 55,
     width: 28 + Math.random() * 100,
     phase: Math.random() * Math.PI * 2,
   }));
@@ -516,9 +624,9 @@ function genPlankton(W, H) {
   });
 }
 
-function updateDrawPlankton(ctx, plankton, W, H, frame, daylight = 1) {
-  // Plankton glow inversely with daylight — brilliant at night
-  const nightBoost = 0.55 + (1 - daylight) * 1.8;
+function updateDrawPlankton(ctx, plankton, W, H, frame, daylight = 1, flashMult = 1) {
+  // Plankton glow inversely with daylight — brilliant at night, amplified during flash
+  const nightBoost = (0.55 + (1 - daylight) * 1.8) * flashMult;
   plankton.forEach(cloud => {
     cloud.cx += cloud.vx;
     cloud.cy += cloud.vy + Math.sin(frame * 0.003 + cloud.hue) * 0.04;
@@ -1013,6 +1121,56 @@ function drawWhale(ctx, whale, frame) {
   haze.addColorStop(1,  'rgba(2,12,30,0.55)');
   ctx.fillStyle = haze; ctx.fill();
 
+  ctx.restore();
+}
+
+// ── Creature turbulence wakes ──────────────────────────────────────────
+function spawnTurbulence(pool, x, y, speed, dir) {
+  // Emit a vortex mote from the creature's tail
+  const perpAngle = dir + Math.PI * 0.5 * (Math.random() < 0.5 ? 1 : -1);
+  const spread = speed * (0.4 + Math.random() * 0.6);
+  pool.push({
+    x: x + (Math.random() - 0.5) * 8,
+    y: y + (Math.random() - 0.5) * 8,
+    vx: Math.cos(perpAngle) * spread * 0.35 + Math.cos(dir + Math.PI) * spread * 0.3,
+    vy: Math.sin(perpAngle) * spread * 0.35 + Math.sin(dir + Math.PI) * spread * 0.3,
+    r:  3 + Math.random() * 5,
+    maxR: 14 + Math.random() * 18,
+    life: 1.0,
+    decay: 0.012 + Math.random() * 0.008,
+    spin:  (Math.random() - 0.5) * 0.12,
+    angle: Math.random() * Math.PI * 2,
+  });
+}
+
+function updateDrawTurbulence(ctx, pool) {
+  if (pool.length === 0) return;
+  ctx.save();
+  ctx.globalCompositeOperation = 'screen';
+  for (let i = pool.length - 1; i >= 0; i--) {
+    const p = pool[i];
+    p.x    += p.vx; p.y += p.vy;
+    p.vx   *= 0.92; p.vy *= 0.92;
+    p.r     = Math.min(p.r + 0.55, p.maxR); // expand
+    p.life -= p.decay;
+    p.angle += p.spin;
+    if (p.life <= 0) { pool.splice(i, 1); continue; }
+
+    const alpha = p.life * 0.14;
+    // Swirling ellipse — rotate to give sense of vortex
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.angle);
+    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, p.r);
+    g.addColorStop(0,   `rgba(120,195,240,${alpha * 0.9})`);
+    g.addColorStop(0.45,`rgba(80,160,215,${alpha * 0.5})`);
+    g.addColorStop(1,   'rgba(40,110,180,0)');
+    ctx.beginPath();
+    ctx.ellipse(0, 0, p.r * 1.35, p.r * 0.6, 0, 0, Math.PI * 2);
+    ctx.fillStyle = g; ctx.fill();
+    ctx.restore();
+  }
+  ctx.globalCompositeOperation = 'source-over';
   ctx.restore();
 }
 
@@ -1874,19 +2032,21 @@ function initEntities(entities, W, H) {
 }
 
 // ── Physics updates ────────────────────────────────────────────────
+// Boid neighbor radii
+const BOID_SEP  = 28;  // separation: repel within this radius
+const BOID_ALI  = 80;  // alignment: match velocity within this radius
+const BOID_COH  = 160; // cohesion: attract toward neighbors within this radius
+
 function updateFish(fish, W, H, mouse, predators = []) {
   const floorY = H * 0.79;
 
-  // Build per-type centroids for loose schooling
-  const typeCentroid = {};
+  // Pre-build per-type fish lists for efficient neighbor lookup
+  const byType = {};
   fish.forEach(f => {
     if (f.type === 'user') return;
-    if (!typeCentroid[f.type]) typeCentroid[f.type] = { sx: 0, sy: 0, n: 0 };
-    typeCentroid[f.type].sx += f.x;
-    typeCentroid[f.type].sy += f.y;
-    typeCentroid[f.type].n++;
+    if (!byType[f.type]) byType[f.type] = [];
+    byType[f.type].push(f);
   });
-  Object.values(typeCentroid).forEach(c => { c.mx = c.sx / c.n; c.my = c.sy / c.n; });
 
   fish.forEach(f => {
     const m = f.type === 'event-fish' ? 60 : 80;
@@ -1913,22 +2073,65 @@ function updateFish(fish, W, H, mouse, predators = []) {
     // Scatter state — suppresses schooling while fish are fleeing explosion
     if (f._scatter > 0) { f._scatter--; }
 
-    // Loose schooling — weakly steer toward same-type centroid when far
-    // Disabled during scatter so exploded fish fly freely before reconvening
-    const cen = typeCentroid[f.type];
-    if (cen && cen.n > 1 && f.type !== 'user' && !f._scatter) {
-      const dx = cen.mx - f.x, dy = cen.my - f.y;
-      const d  = Math.sqrt(dx * dx + dy * dy);
-      if (d > 140) {
-        // Blend target direction toward centroid (weak pull)
-        const schoolDir = Math.atan2(dy, dx);
-        let sd = schoolDir - f.targetDir;
+    // ── Full 3-rule boid schooling (local neighbor based) ──────────────
+    if (f.type !== 'user' && !f._scatter) {
+      const sameType = byType[f.type] || [];
+      let sepX = 0, sepY = 0, sepN = 0;
+      let aliVX = 0, aliVY = 0, aliN = 0;
+      let cohX = 0, cohY = 0, cohN = 0;
+
+      for (let j = 0; j < sameType.length; j++) {
+        const n = sameType[j];
+        if (n === f) continue;
+        const dx = f.x - n.x, dy = f.y - n.y;
+        const d2 = dx * dx + dy * dy;
+        const d  = Math.sqrt(d2);
+
+        if (d < BOID_SEP && d > 0.01) {
+          // Separation — steer away, weighted by closeness
+          const w = (BOID_SEP - d) / BOID_SEP;
+          sepX += (dx / d) * w; sepY += (dy / d) * w; sepN++;
+        }
+        if (d < BOID_ALI) {
+          // Alignment — match velocity direction of neighbors
+          aliVX += n.vx; aliVY += n.vy; aliN++;
+        }
+        if (d < BOID_COH) {
+          // Cohesion — attract toward average neighbor position
+          cohX += n.x; cohY += n.y; cohN++;
+        }
+      }
+
+      // Apply separation (strong) — push away from overcrowded neighbors
+      if (sepN > 0) {
+        const sepDir = Math.atan2(sepY / sepN, sepX / sepN);
+        let sd = sepDir - f.targetDir;
         while (sd >  Math.PI) sd -= Math.PI * 2;
         while (sd < -Math.PI) sd += Math.PI * 2;
-        f.targetDir += sd * 0.04;
-      } else if (d < 38 && d > 0.01) {
-        // Slight separation when too close
-        f.targetDir = Math.atan2(-dy, -dx);
+        f.targetDir += sd * 0.12;
+      }
+
+      // Apply alignment (moderate) — match neighbor headings
+      if (aliN > 0) {
+        const aliDir = Math.atan2(aliVY / aliN, aliVX / aliN);
+        let ad = aliDir - f.targetDir;
+        while (ad >  Math.PI) ad -= Math.PI * 2;
+        while (ad < -Math.PI) ad += Math.PI * 2;
+        f.targetDir += ad * 0.028;
+      }
+
+      // Apply cohesion (weak) — drift toward average neighbor position
+      if (cohN > 0) {
+        const avgX = cohX / cohN, avgY = cohY / cohN;
+        const cdx = avgX - f.x, cdy = avgY - f.y;
+        const cd  = Math.sqrt(cdx * cdx + cdy * cdy);
+        if (cd > 25) {
+          const cohDir = Math.atan2(cdy, cdx);
+          let cod = cohDir - f.targetDir;
+          while (cod >  Math.PI) cod -= Math.PI * 2;
+          while (cod < -Math.PI) cod += Math.PI * 2;
+          f.targetDir += cod * 0.018;
+        }
       }
     }
 
@@ -2192,26 +2395,79 @@ function updateCrabs(crabs, W, H) {
   });
 }
 
-function updateTurtles(turtles, W, H) {
+function updateTurtles(turtles, W, H, bubbles) {
   const floorY = H * 0.82;
   turtles.forEach(t => {
-    const m = 70;
-    if      (t.x < m)         t.targetDir = (Math.random() - 0.5) * 0.5;
-    else if (t.x > W - m)     t.targetDir = Math.PI + (Math.random() - 0.5) * 0.5;
-    else if (t.y < m)         t.targetDir = Math.PI * 0.5 + (Math.random() - 0.5) * 0.4;
-    else if (t.y > floorY - m) t.targetDir = -Math.PI * 0.5 + (Math.random() - 0.5) * 0.4;
-    else if (Math.random() < 0.003) t.targetDir += (Math.random() - 0.5) * 0.7;
+    // ── Surfacing state machine ────────────────────────────────────────
+    if (!t._surfaceTimer) t._surfaceTimer = 1800 + Math.floor(Math.random() * 2400);
+    if (!t._surfacePhase) t._surfacePhase = 'normal';
 
+    if (t._surfacePhase === 'normal') {
+      t._surfaceTimer = Math.max(0, t._surfaceTimer - 1);
+      if (t._surfaceTimer === 0) {
+        t._surfacePhase = 'rising';
+        t._surfaceTimer  = 0;
+      }
+    } else if (t._surfacePhase === 'rising') {
+      // Steer sharply upward toward surface
+      t.targetDir = -Math.PI * 0.5 + (Math.random() - 0.5) * 0.2;
+      if (t.y < H * 0.06) {
+        t._surfacePhase = 'breathing';
+        t._surfaceTimer  = 90 + Math.floor(Math.random() * 60); // 1.5-2.5s at surface
+        // Exhale: push a burst of bubbles upward
+        if (bubbles) {
+          for (let b = 0; b < 12; b++) {
+            bubbles.push({
+              x:     t.x + (Math.random() - 0.5) * 14,
+              y:     t.y + 6,
+              r:     1.2 + Math.random() * 2.2,
+              speed: 0.55 + Math.random() * 0.65,
+              phase: Math.random() * Math.PI * 2,
+              drift: (Math.random() - 0.5) * 0.3,
+            });
+          }
+        }
+      }
+    } else if (t._surfacePhase === 'breathing') {
+      // Bob gently at surface
+      t.targetDir = (Math.random() - 0.5) * 0.3;
+      t.vy = Math.min(t.vy, 0.05);
+      t._surfaceTimer = Math.max(0, t._surfaceTimer - 1);
+      if (t._surfaceTimer === 0) {
+        t._surfacePhase = 'descending';
+      }
+    } else { // descending
+      t.targetDir = Math.PI * 0.5 + (Math.random() - 0.5) * 0.4;
+      if (t.y > H * 0.25) {
+        t._surfacePhase = 'normal';
+        t._surfaceTimer  = 1800 + Math.floor(Math.random() * 2400); // 30-70s until next surface
+      }
+    }
+
+    // ── Normal steering (when not locked into surface maneuver) ────────
+    const m = 70;
+    if (t._surfacePhase === 'normal') {
+      if      (t.x < m)           t.targetDir = (Math.random() - 0.5) * 0.5;
+      else if (t.x > W - m)       t.targetDir = Math.PI + (Math.random() - 0.5) * 0.5;
+      else if (t.y > floorY - m)  t.targetDir = -Math.PI * 0.5 + (Math.random() - 0.5) * 0.4;
+      else if (Math.random() < 0.003) t.targetDir += (Math.random() - 0.5) * 0.7;
+    }
+
+    const turnRate = (t._surfacePhase === 'rising' || t._surfacePhase === 'descending') ? 0.025 : 0.01;
     let diff = t.targetDir - t.dir;
     while (diff >  Math.PI) diff -= Math.PI * 2;
     while (diff < -Math.PI) diff += Math.PI * 2;
-    t.dir += diff * 0.01;
+    t.dir += diff * turnRate;
 
-    t.vx = t.vx * 0.96 + Math.cos(t.dir) * t.speed * 0.04;
-    t.vy = t.vy * 0.96 + Math.sin(t.dir) * t.speed * 0.04;
+    const activeSpeed = (t._surfacePhase === 'rising') ? t.speed * 1.8 : t.speed;
+    t.vx = t.vx * 0.96 + Math.cos(t.dir) * activeSpeed * 0.04;
+    t.vy = t.vy * 0.96 + Math.sin(t.dir) * activeSpeed * 0.04;
     t.x += t.vx; t.y += t.vy;
     t.x = Math.max(30, Math.min(W - 30, t.x));
-    t.y = Math.max(30, Math.min(floorY - 20, t.y));
+    // Allow turtles to reach the very top during surfacing
+    const minY = t._surfacePhase === 'breathing' ? 4 : 30;
+    t.y = Math.max(minY, Math.min(floorY - 20, t.y));
+
     // Trail
     if (!t.trail) t.trail = [];
     if (!t._trailTick) t._trailTick = 0;
@@ -2220,6 +2476,152 @@ function updateTurtles(turtles, W, H) {
       if (t.trail.length > 12) t.trail.shift();
     }
   });
+}
+
+// ── Deep reef silhouette ─────────────────────────────────────────────
+// Generates deterministic reef shape data from seed values (no stored state needed)
+function drawReefSilhouette(ctx, W, H, frame, mouse, daylight) {
+  const px = (mouse.x / W - 0.5) * 12;
+  const py = (mouse.y / H - 0.5) * 6;
+
+  ctx.save();
+  // Very slow parallax — furthest layer in the scene
+  ctx.translate(px * 0.35, py * 0.15);
+
+  // 5 reef formation groups at varying x positions and floor heights
+  const formations = [
+    { cx: W * 0.08,  baseY: H * 0.78, w: W * 0.14, h: H * 0.22, seed: 11.3 },
+    { cx: W * 0.28,  baseY: H * 0.82, w: W * 0.18, h: H * 0.16, seed: 27.7 },
+    { cx: W * 0.52,  baseY: H * 0.76, w: W * 0.22, h: H * 0.26, seed: 43.1 },
+    { cx: W * 0.73,  baseY: H * 0.80, w: W * 0.16, h: H * 0.20, seed: 59.9 },
+    { cx: W * 0.92,  baseY: H * 0.74, w: W * 0.14, h: H * 0.28, seed: 71.5 },
+  ];
+
+  // Night-adjusted haze: slightly brighter at night from bioluminescence scatter
+  const hazeBlue = Math.round(8 + (1 - daylight) * 12);
+  const silAlpha = 0.55 + (1 - daylight) * 0.15;
+
+  formations.forEach(f => {
+    const { cx, baseY, w, h, seed } = f;
+
+    // Build a jagged ridge silhouette using deterministic pseudo-random peaks
+    ctx.beginPath();
+    ctx.moveTo(cx - w * 0.6, H + 10); // bottom-left anchor below canvas
+
+    const steps = 14;
+    for (let s = 0; s <= steps; s++) {
+      const t   = s / steps;
+      const nx  = (cx - w * 0.6) + t * w * 1.2;
+      // Height variation using sines with the seed for determinism
+      const peakH = h * (
+        0.3 + 0.35 * Math.abs(Math.sin(seed + t * 5.1)) +
+        0.25 * Math.abs(Math.sin(seed * 1.7 + t * 8.3)) +
+        0.10 * Math.abs(Math.sin(seed * 3.1 + t * 14.9))
+      );
+      // Extra spire at certain positions
+      const spire = (s === 4 || s === 9) ? h * 0.18 * Math.abs(Math.sin(seed * 4.2 + s)) : 0;
+      ctx.lineTo(nx, baseY - peakH - spire);
+    }
+
+    ctx.lineTo(cx + w * 0.6, H + 10); // bottom-right anchor
+    ctx.closePath();
+
+    // Fill with a vertical gradient: near-black at top, slightly lighter at base
+    const grad = ctx.createLinearGradient(cx, baseY - h, cx, H);
+    grad.addColorStop(0,   `rgba(${hazeBlue},${hazeBlue + 10},${hazeBlue + 22},${silAlpha})`);
+    grad.addColorStop(0.4, `rgba(${hazeBlue - 2},${hazeBlue + 6},${hazeBlue + 16},${silAlpha * 0.85})`);
+    grad.addColorStop(1,   `rgba(2,6,14,${silAlpha * 0.6})`);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Slight blue-haze rim at the top edge (depth scattering)
+    ctx.beginPath();
+    ctx.moveTo(cx - w * 0.6, baseY);
+    const rimSteps = 8;
+    for (let s = 0; s <= rimSteps; s++) {
+      const t   = s / rimSteps;
+      const nx  = (cx - w * 0.6) + t * w * 1.2;
+      const ph  = h * (0.3 + 0.35 * Math.abs(Math.sin(seed + t * 5.1)) + 0.25 * Math.abs(Math.sin(seed * 1.7 + t * 8.3)));
+      ctx.lineTo(nx, baseY - ph);
+    }
+    ctx.strokeStyle = `rgba(30,65,110,${0.18 + (1 - daylight) * 0.08})`;
+    ctx.lineWidth = 1.5; ctx.stroke();
+  });
+
+  ctx.restore();
+}
+
+// ── Seafloor texture ─────────────────────────────────────────────────
+// Multi-scale animated sand ripples give the floor organic texture.
+function drawSeafloorTexture(ctx, W, H, frame, daylight, tidalCurrent) {
+  const floorY = H * 0.81;
+  const zoneH  = H - floorY; // floor zone height
+
+  // Tidal current shifts ripple phase direction and speed
+  const tidalShift = tidalCurrent && tidalCurrent.active
+    ? tidalCurrent.cosA * tidalCurrent.strength * 0.022 : 0;
+
+  ctx.save();
+
+  // Large-scale primary ripples (slow, widely spaced)
+  const primaryRipples = 12;
+  for (let r = 0; r < primaryRipples; r++) {
+    const t   = r / primaryRipples;
+    const ry  = floorY + t * zoneH * 0.85;
+    const amp = 3.5 - t * 2.0;  // amplitude decreases deeper
+    const spd = 0.004 + t * 0.002;
+    const freq = 0.025 + t * 0.008;
+    const nightBrightness = 0.025 + (1 - daylight) * 0.018;
+    const alpha = (nightBrightness + (1 - t) * 0.018) * (0.6 + 0.4 * (1 - t));
+
+    ctx.beginPath();
+    ctx.moveTo(0, ry);
+    for (let sx = 0; sx <= W; sx += 5) {
+      const wave = Math.sin(sx * freq + frame * (spd + tidalShift) + r * 1.3) * amp
+                 + Math.sin(sx * freq * 2.1 + frame * spd * 1.6 + r * 0.8) * amp * 0.3;
+      ctx.lineTo(sx, ry + wave);
+    }
+    ctx.strokeStyle = `rgba(60,130,180,${alpha})`;
+    ctx.lineWidth = 0.55 + (1 - t) * 0.35;
+    ctx.stroke();
+  }
+
+  // Small-scale secondary ripples (faster, tighter — sand grain motion)
+  const microRipples = 8;
+  for (let r = 0; r < microRipples; r++) {
+    const t   = r / microRipples;
+    const ry  = floorY + zoneH * 0.05 + t * zoneH * 0.70;
+    const amp = 1.2 - t * 0.7;
+    const freq = 0.065 + r * 0.009;
+    const alpha = 0.018 + (1 - daylight) * 0.012;
+
+    ctx.beginPath();
+    ctx.moveTo(0, ry);
+    for (let sx = 0; sx <= W; sx += 4) {
+      const wave = Math.sin(sx * freq + frame * (0.009 + tidalShift * 1.8) + r * 2.1) * amp;
+      ctx.lineTo(sx, ry + wave);
+    }
+    ctx.strokeStyle = `rgba(70,145,195,${alpha})`;
+    ctx.lineWidth = 0.35;
+    ctx.stroke();
+  }
+
+  // Occasional bright sediment glints at night (bioluminescent micro-organisms)
+  if (daylight < 0.55) {
+    const glintCount = 18;
+    const nightIntensity = (1 - daylight) * 0.55;
+    for (let g = 0; g < glintCount; g++) {
+      const gx = ((g * 173.4 + frame * 0.04) % W);
+      const gy = floorY + 4 + ((g * 97.1 + frame * 0.018) % (zoneH * 0.6));
+      const gp = Math.sin(frame * 0.065 + g * 2.1) * 0.5 + 0.5;
+      ctx.beginPath();
+      ctx.arc(gx, gy, 0.7 + gp * 0.5, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(185,75%,65%,${gp * nightIntensity * 0.5})`;
+      ctx.fill();
+    }
+  }
+
+  ctx.restore();
 }
 
 // ── Drawing ────────────────────────────────────────────────────────
@@ -2241,39 +2643,59 @@ function drawBackground(ctx, W, H, frame, rays, mouse, daylight = 1) {
   const py = (mouse.y / H - 0.5) *  6;
 
   ctx.save(); ctx.translate(px * 1.5, py * 0.5);
-  // Primary wide rays — fade at night
+  ctx.globalCompositeOperation = 'screen';
+
+  // Primary wide rays — 2× brighter than before
   rays.forEach(ray => {
     const pulse = Math.sin(frame * 0.012 + ray.phase) * 0.5 + 0.5;
-    const alpha = (0.024 + pulse * 0.036) * daylight;
-    const gr = ctx.createLinearGradient(ray.x, 0, ray.x, H * 0.82);
-    gr.addColorStop(0,   `rgba(110,195,255,${alpha})`);
-    gr.addColorStop(0.35,`rgba(70,160,240,${alpha * 0.7})`);
-    gr.addColorStop(1,   'rgba(0,40,90,0)');
+    const alpha = (0.048 + pulse * 0.068) * daylight;  // was 0.024+0.036
+    const gr = ctx.createLinearGradient(ray.x, 0, ray.x, H * 0.88);
+    gr.addColorStop(0,    `rgba(130,210,255,${alpha})`);
+    gr.addColorStop(0.22, `rgba(90,175,245,${alpha * 0.82})`);
+    gr.addColorStop(0.55, `rgba(60,140,220,${alpha * 0.45})`);
+    gr.addColorStop(1,    'rgba(0,40,90,0)');
     ctx.beginPath();
     ctx.moveTo(ray.x - ray.width * 0.5, 0);
     ctx.lineTo(ray.x + ray.width * 0.5, 0);
-    ctx.lineTo(ray.x + ray.width * 0.60 + px * 0.4, H * 0.82);
-    ctx.lineTo(ray.x - ray.width * 0.28 + px * 0.4, H * 0.82);
+    ctx.lineTo(ray.x + ray.width * 0.62 + px * 0.4, H * 0.88);
+    ctx.lineTo(ray.x - ray.width * 0.30 + px * 0.4, H * 0.88);
     ctx.closePath();
     ctx.fillStyle = gr; ctx.fill();
   });
-  // Bright narrow accent rays (half the rays get a bright central shaft)
-  rays.forEach((ray, ri) => {
-    if (ri % 2 !== 0) return;
+
+  // Bright narrow central shafts — every ray gets one now
+  rays.forEach(ray => {
     const pulse2 = Math.sin(frame * 0.016 + ray.phase + 1.2) * 0.5 + 0.5;
-    const alpha2 = (0.035 + pulse2 * 0.055) * daylight;
-    const w2 = ray.width * 0.18;
-    const gr2 = ctx.createLinearGradient(ray.x, 0, ray.x, H * 0.55);
-    gr2.addColorStop(0, `rgba(170,225,255,${alpha2})`);
-    gr2.addColorStop(1, 'rgba(80,160,255,0)');
+    const alpha2 = (0.072 + pulse2 * 0.095) * daylight;  // was 0.035+0.055, every-other
+    const w2 = ray.width * 0.14;
+    const gr2 = ctx.createLinearGradient(ray.x, 0, ray.x, H * 0.62);
+    gr2.addColorStop(0,    `rgba(200,238,255,${alpha2})`);
+    gr2.addColorStop(0.18, `rgba(160,215,255,${alpha2 * 0.70})`);
+    gr2.addColorStop(0.55, `rgba(90,170,240,${alpha2 * 0.28})`);
+    gr2.addColorStop(1,    'rgba(50,120,200,0)');
     ctx.beginPath();
     ctx.moveTo(ray.x - w2 * 0.5, 0);
     ctx.lineTo(ray.x + w2 * 0.5, 0);
-    ctx.lineTo(ray.x + w2 * 0.7 + px * 0.2, H * 0.55);
-    ctx.lineTo(ray.x - w2 * 0.3 + px * 0.2, H * 0.55);
+    ctx.lineTo(ray.x + w2 * 0.75 + px * 0.2, H * 0.62);
+    ctx.lineTo(ray.x - w2 * 0.32 + px * 0.2, H * 0.62);
     ctx.closePath();
     ctx.fillStyle = gr2; ctx.fill();
   });
+
+  // Surface-entry caustic crown — bright star burst where each ray enters the water
+  rays.forEach(ray => {
+    const pulse3 = Math.sin(frame * 0.024 + ray.phase * 1.5) * 0.5 + 0.5;
+    const crownAlpha = (0.12 + pulse3 * 0.16) * daylight;
+    const crownW = ray.width * 0.7;
+    const cg = ctx.createRadialGradient(ray.x, 0, 0, ray.x, 2, crownW * 1.1);
+    cg.addColorStop(0,   `rgba(220,245,255,${crownAlpha})`);
+    cg.addColorStop(0.35,`rgba(160,220,255,${crownAlpha * 0.5})`);
+    cg.addColorStop(1,   'rgba(80,160,220,0)');
+    ctx.beginPath(); ctx.ellipse(ray.x, 1, crownW * 0.5, 4 + pulse3 * 3, 0, 0, Math.PI * 2);
+    ctx.fillStyle = cg; ctx.fill();
+  });
+
+  ctx.globalCompositeOperation = 'source-over';
   ctx.restore();
 
   for (let sx = 0; sx < W; sx += 22) {
@@ -2801,39 +3223,165 @@ function drawCoral(ctx, c, frame, daylight = 1) {
   }
 }
 
+// ── Deep background fish layers ──────────────────────────────────────
+// Two additional parallax layers of distant schooling silhouettes add
+// a strong sense of depth. Fish are simple velocity-boid dots — no complex draw.
+function genDeepLayers(W, H) {
+  const layers = [];
+  const configs = [
+    // Far: tiny, very faint, very slow — looks like they're 200m away
+    { count: 55, sizeRange: [0.55, 1.1], speedRange: [0.06, 0.14], y: H * 0.18, spread: 120,
+      alpha: 0.10, depthZ: 0.0 },
+    // Mid-far: slightly larger, moderately faint
+    { count: 38, sizeRange: [0.9, 1.6], speedRange: [0.10, 0.22], y: H * 0.38, spread: 90,
+      alpha: 0.16, depthZ: 0.2 },
+  ];
+  configs.forEach(cfg => {
+    const fish = Array.from({ length: cfg.count }, (_, i) => {
+      const dir = Math.random() < 0.5 ? 1 : -1;
+      return {
+        x: Math.random() * W,
+        y: cfg.y + (Math.random() - 0.5) * cfg.spread,
+        vx: dir * (cfg.speedRange[0] + Math.random() * (cfg.speedRange[1] - cfg.speedRange[0])),
+        vy: (Math.random() - 0.5) * 0.04,
+        size: cfg.sizeRange[0] + Math.random() * (cfg.sizeRange[1] - cfg.sizeRange[0]),
+        phase: Math.random() * Math.PI * 2,
+      };
+    });
+    layers.push({ fish, alpha: cfg.alpha, depthZ: cfg.depthZ });
+  });
+  return layers;
+}
+
+function updateDrawDeepLayers(ctx, layers, W, H, frame, daylight, px, py) {
+  layers.forEach((layer, li) => {
+    // Very slight parallax — further layers move less with mouse
+    const lx = px * (0.12 + li * 0.06), ly = py * (0.06 + li * 0.03);
+    ctx.save();
+    ctx.translate(lx, ly);
+    ctx.globalAlpha = layer.alpha * (0.55 + daylight * 0.45); // dimmer at night
+    ctx.globalCompositeOperation = 'source-over';
+
+    // Compute school centroid for loose cohesion
+    const cx = layer.fish.reduce((s, f) => s + f.x, 0) / layer.fish.length;
+    const cy = layer.fish.reduce((s, f) => s + f.y, 0) / layer.fish.length;
+
+    layer.fish.forEach(f => {
+      // Cohesion + wander
+      f.vx += (cx - f.x) * 0.00045 + Math.sin(frame * 0.008 + f.phase) * 0.002;
+      f.vy += (cy - f.y) * 0.00055 + Math.cos(frame * 0.006 + f.phase * 1.4) * 0.0015;
+      // Gentle edge bounce
+      if (f.x < 20)    f.vx += 0.018;
+      if (f.x > W - 20) f.vx -= 0.018;
+      if (f.y < H * 0.05) f.vy += 0.01;
+      if (f.y > H * 0.78) f.vy -= 0.01;
+      // Cap speed
+      const spd = Math.sqrt(f.vx * f.vx + f.vy * f.vy);
+      if (spd > 0.28) { f.vx = f.vx / spd * 0.28; f.vy = f.vy / spd * 0.28; }
+      f.x += f.vx; f.y += f.vy;
+      f.x = (f.x + W) % W; // wrap horizontally
+
+      // Draw as tiny tapered ellipse
+      const dir = Math.atan2(f.vy, f.vx);
+      ctx.save();
+      ctx.translate(f.x, f.y);
+      ctx.rotate(dir);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, f.size * 1.6, f.size * 0.45, 0, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(55,90,120,1)`; // deep blue-grey silhouette
+      ctx.fill();
+      ctx.restore();
+    });
+
+    ctx.restore();
+  });
+}
+
 function genBaitSchool(W, H) {
-  // A tight school of 42 tiny ambient fish — non-interactive, purely atmospheric
   const cx = W * 0.35, cy = H * 0.28;
-  return Array.from({ length: 42 }, (_, i) => ({
-    x:     cx + (Math.random() - 0.5) * 80,
-    y:     cy + (Math.random() - 0.5) * 45,
-    vx:    (Math.random() - 0.5) * 0.2,
-    vy:    (Math.random() - 0.5) * 0.1,
-    phase: Math.random() * Math.PI * 2,
-    size:  1.5 + Math.random() * 1.4,
-  }));
+  // Each fish also gets an orbit index for murmuration
+  return Object.assign(
+    Array.from({ length: 42 }, (_, i) => ({
+      x:       cx + (Math.random() - 0.5) * 80,
+      y:       cy + (Math.random() - 0.5) * 45,
+      vx:      (Math.random() - 0.5) * 0.2,
+      vy:      (Math.random() - 0.5) * 0.1,
+      phase:   Math.random() * Math.PI * 2,
+      size:    1.5 + Math.random() * 1.4,
+      orbitIdx: i,  // position in murmuration ring
+    })),
+    {
+      // School-level murmuration state
+      _murTimer: 600 + Math.floor(Math.random() * 900), // frames until first murmuration
+      _murActive: false,
+      _murAngle: 0,   // current rotation angle of the vortex
+      _murCX: cx, _murCY: cy,
+      _murRadius: 55,
+      _murDuration: 0,
+    }
+  );
 }
 
 function updateBaitSchool(school, W, H, frame) {
-  // Loose boids: steer toward centroid, avoid edges, add gentle wander
+  // Murmuration state machine
+  school._murTimer = Math.max(0, school._murTimer - 1);
+  if (!school._murActive && school._murTimer === 0) {
+    // Start murmuration — pick a center in the mid-water
+    school._murCX = W * 0.18 + Math.random() * W * 0.64;
+    school._murCY = H * 0.15 + Math.random() * H * 0.45;
+    school._murRadius = 48 + Math.random() * 35;
+    school._murAngle = 0;
+    school._murDuration = 350 + Math.floor(Math.random() * 250); // ~5-10s
+    school._murActive = true;
+    school._murTimer = 0;
+  }
+  if (school._murActive) {
+    school._murDuration--;
+    school._murAngle += 0.016; // rotation speed
+    if (school._murDuration <= 0) {
+      school._murActive = false;
+      school._murTimer = 800 + Math.floor(Math.random() * 1200); // gap until next
+    }
+  }
+
   const cx = school.reduce((s, b) => s + b.x, 0) / school.length;
   const cy = school.reduce((s, b) => s + b.y, 0) / school.length;
+  const murBlend = school._murActive
+    ? Math.min(1, (school._murDuration > 280 ? (350 - school._murDuration) / 70 : school._murDuration / 70))
+    : 0;
 
   school.forEach(b => {
-    // Cohesion toward centroid
-    b.vx += (cx - b.x) * 0.0006;
-    b.vy += (cy - b.y) * 0.0006;
-    // Wander
-    b.vx += Math.sin(frame * 0.012 + b.phase) * 0.004;
-    b.vy += Math.cos(frame * 0.009 + b.phase * 1.3) * 0.003;
+    if (school._murActive && murBlend > 0.01) {
+      // Orbit target: fish orbit vortex center at their assigned radius with angular offset
+      const layers = 3;
+      const layer = Math.floor(b.orbitIdx / (school.length / layers));
+      const layerR = school._murRadius * (0.6 + layer * 0.4);
+      const layerSpeed = school._murAngle * (1 + layer * 0.3);
+      const baseAngle = (b.orbitIdx / (school.length / layers)) * Math.PI * 2;
+      const orbitX = school._murCX + Math.cos(baseAngle + layerSpeed) * layerR;
+      const orbitY = school._murCY + Math.sin(baseAngle + layerSpeed) * layerR * 0.55; // flatten to ellipse
+      // Blend orbit target with centroid cohesion
+      const targetX = orbitX * murBlend + cx * (1 - murBlend);
+      const targetY = orbitY * murBlend + cy * (1 - murBlend);
+      b.vx += (targetX - b.x) * 0.028 * murBlend;
+      b.vy += (targetY - b.y) * 0.028 * murBlend;
+    } else {
+      // Normal schooling
+      b.vx += (cx - b.x) * 0.0006;
+      b.vy += (cy - b.y) * 0.0006;
+      b.vx += Math.sin(frame * 0.012 + b.phase) * 0.004;
+      b.vy += Math.cos(frame * 0.009 + b.phase * 1.3) * 0.003;
+    }
+
     // Edge avoidance
     if (b.x < 40)       b.vx += 0.012;
     if (b.x > W - 40)   b.vx -= 0.012;
     if (b.y < 25)       b.vy += 0.012;
     if (b.y > H * 0.75) b.vy -= 0.012;
-    // Cap speed
+
     const spd = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
-    if (spd > 0.65) { b.vx = b.vx / spd * 0.65; b.vy = b.vy / spd * 0.65; }
+    const maxSpd = school._murActive ? 1.1 : 0.65;
+    if (spd > maxSpd) { b.vx = b.vx / spd * maxSpd; b.vy = b.vy / spd * maxSpd; }
     b.x += b.vx; b.y += b.vy;
   });
 }
@@ -2876,12 +3424,12 @@ function drawBubbles(ctx, bubbles, frame, H) {
   });
 }
 
-function drawEntityTrails(ctx, fish, jellies, stingrays, seahorses, turtles, daylight = 1) {
+function drawEntityTrails(ctx, fish, jellies, stingrays, seahorses, turtles, daylight = 1, flashMult = 1) {
   ctx.save();
   ctx.globalCompositeOperation = 'screen';
 
-  // Night boost: trails become 3× brighter in the dark
-  const nightBoost = 1 + (1 - daylight) * 2.8;
+  // Night boost: trails become 3× brighter in the dark; flashMult amplifies during bio-flash
+  const nightBoost = (1 + (1 - daylight) * 2.8) * flashMult;
 
   const groups = [
     { arr: fish,       sizeScale: 0.28 },
@@ -2937,7 +3485,7 @@ function drawFloorShadow(ctx, entity, floorY) {
   ctx.restore();
 }
 
-function drawFish(ctx, f, isSelected, isHovered) {
+function drawFish(ctx, f, isSelected, isHovered, illum = 0) {
   const { x, y, dir, wiggle, size } = f;
   const color  = tColor(f.type);
   const tw     = Math.sin(wiggle) * size * 0.30;
@@ -3011,8 +3559,10 @@ function drawFish(ctx, f, isSelected, isHovered) {
     bodyW * 0.12, -bodyH * 0.52, 0,
     bodyW * 0.06, -bodyH * 0.18, bodyW * 0.72
   );
-  spec.addColorStop(0,    'rgba(255,255,255,0.46)');
-  spec.addColorStop(0.30, 'rgba(255,255,255,0.10)');
+  // illum: brightens specular when fish is inside a god ray shaft
+  const specBase = 0.46 + illum * 0.38;
+  spec.addColorStop(0,    `rgba(255,255,255,${specBase})`);
+  spec.addColorStop(0.30, `rgba(255,255,255,${0.10 + illum * 0.12})`);
   spec.addColorStop(1,    'rgba(255,255,255,0)');
   ctx.beginPath(); ctx.ellipse(0, 0, bodyW, bodyH, 0, 0, Math.PI * 2);
   ctx.fillStyle = spec; ctx.fill();
@@ -3849,6 +4399,7 @@ export default function AquariumCanvas({ entities, onEntityClick }) {
     const { fish, jellies, stingrays, seahorses, crabs, turtles } = initEntities(entities, W, H);
     const coral       = genCoral(W, H);
     const seaweed     = genSeaweed(W, H);
+    const kelp        = genKelp(W, H);
     const rays        = genRays(W);
     const bubbles     = genBubbles(W, H);
     const anemones    = genAnemones(W, H);
@@ -3858,6 +4409,7 @@ export default function AquariumCanvas({ entities, onEntityClick }) {
     const bioEvents        = genBioEvents();
     const surfaceMesh      = genSurfaceMesh(W);
     const baitSchool       = genBaitSchool(W, H);
+    const deepLayers       = genDeepLayers(W, H);
     const currentParticles = genCurrentParticles(W, H);
     const dustParticles    = genDustParticles(W, H);
     const bubbleChains     = genBubbleChains(coral, rocks);
@@ -3874,13 +4426,16 @@ export default function AquariumCanvas({ entities, onEntityClick }) {
     const tidalCurrent     = genTidalCurrent();
     const coralSpawn       = genCoralSpawnState();
     const shark            = genShark(W, H);
-    stateRef.current  = { fish, jellies, stingrays, seahorses, crabs, turtles, coral, seaweed, rays, bubbles, anemones, rocks, ripples, clickParticles, bioEvents, surfaceMesh, baitSchool, currentParticles, dustParticles, bubbleChains, plankton, eels, inkClouds, octopuses, manta, causticCells, whale, angler, urchins, clownfish, tidalCurrent, coralSpawn, shark };
+    const turbulence       = []; // shared pool for shark + stingray wakes
+    // bioFlash: rare mass bioluminescent pulse event
+    const bioFlash = { strength: 0, cooldown: 1800 + Math.floor(Math.random() * 2400) };
+    stateRef.current  = { fish, jellies, stingrays, seahorses, crabs, turtles, coral, seaweed, kelp, rays, bubbles, anemones, rocks, ripples, clickParticles, bioEvents, surfaceMesh, baitSchool, deepLayers, currentParticles, dustParticles, bubbleChains, plankton, eels, inkClouds, octopuses, manta, causticCells, whale, angler, urchins, clownfish, tidalCurrent, coralSpawn, shark, turbulence, bioFlash };
     mouseRef.current  = { x: W / 2, y: H / 2 };
 
     let frame = 0, rafId, lastTime = 0;
 
     function render() {
-      const { fish, jellies, stingrays, seahorses, crabs, turtles, coral, seaweed, rays, bubbles, anemones, rocks, ripples, clickParticles, bioEvents, surfaceMesh, baitSchool, currentParticles, dustParticles, bubbleChains, plankton, eels, inkClouds, octopuses, manta, causticCells, whale, angler, urchins, clownfish, tidalCurrent, coralSpawn, shark } = stateRef.current;
+      const { fish, jellies, stingrays, seahorses, crabs, turtles, coral, seaweed, kelp, rays, bubbles, anemones, rocks, ripples, clickParticles, bioEvents, surfaceMesh, baitSchool, deepLayers, currentParticles, dustParticles, bubbleChains, plankton, eels, inkClouds, octopuses, manta, causticCells, whale, angler, urchins, clownfish, tidalCurrent, coralSpawn, shark, turbulence, bioFlash } = stateRef.current;
       const mouse = mouseRef.current;
       const sel   = selectedRef.current;
       const hov   = hoveredRef.current;
@@ -3892,6 +4447,29 @@ export default function AquariumCanvas({ entities, onEntityClick }) {
 
       // Day/night cycle: full period ~50 seconds at 60fps; starts at "day"
       const daylight = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(frame * 0.002));
+
+      // ── Bioluminescent mass flash ────────────────────────────────────
+      // Rare ocean-wide event: all creatures pulse simultaneously
+      bioFlash.cooldown = Math.max(0, bioFlash.cooldown - 1);
+      if (bioFlash.cooldown === 0 && daylight < 0.46 && Math.random() < 0.004) {
+        bioFlash.strength = 1.0;
+        bioFlash.cooldown = 3000 + Math.floor(Math.random() * 3600); // 50-110s until next
+      }
+      if (bioFlash.strength > 0) {
+        bioFlash.strength = Math.max(0, bioFlash.strength - 0.008); // ~125 frame fade
+      }
+      // flashMult: amplifier for bioluminescent elements (1 at rest, up to 3.5 during flash)
+      const flashMult = 1 + bioFlash.strength * 2.5;
+
+      // Flash overlay — brief screen-wide blue-green pulse at peak
+      if (bioFlash.strength > 0.05) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen';
+        ctx.globalAlpha = bioFlash.strength * 0.14;
+        ctx.fillStyle = 'rgba(30,200,180,1)';
+        ctx.fillRect(0, 0, W, H);
+        ctx.restore();
+      }
 
       // 1. Background (gradient + rays + shimmer + plankton)
       drawBackground(ctx, W, H, frame, rays, mouse, daylight);
@@ -3906,7 +4484,10 @@ export default function AquariumCanvas({ entities, onEntityClick }) {
         ctx.restore();
       }
 
-      // 1a2. Distant whale — massive silhouette gliding through the deep background
+      // 1a2. Deep reef silhouette — permanent geological backdrop
+      drawReefSilhouette(ctx, W, H, frame, mouse, daylight);
+
+      // 1a3. Distant whale — massive silhouette gliding through the deep background
       updateWhale(whale, W, H, frame);
       drawWhale(ctx, whale, frame);
 
@@ -3922,9 +4503,17 @@ export default function AquariumCanvas({ entities, onEntityClick }) {
       // 1d. Thermocline boundary — shimmering optical layer at mid-depth
       drawThermocline(ctx, W, H, frame);
 
+      // 1e. Seafloor sand ripple texture
+      drawSeafloorTexture(ctx, W, H, frame, daylight, tidalCurrent);
+
       // 2. Seaweed with parallax (foreground layer — moves most relative to camera)
       ctx.save(); ctx.translate(px * 2.4, py * 1.2);
       seaweed.forEach(s => drawSeaweed(ctx, s, frame, tidalCurrent, daylight));
+      ctx.restore();
+
+      // 2b. Kelp forest — tall swaying columns with blade fronds (mid parallax)
+      ctx.save(); ctx.translate(px * 1.8, py * 0.9);
+      kelp.forEach(k => drawKelp(ctx, k, frame, daylight));
       ctx.restore();
 
       // 3. Rocks (midground — moderate parallax)
@@ -3959,7 +4548,7 @@ export default function AquariumCanvas({ entities, onEntityClick }) {
       drawCoralSpawn(ctx, coralSpawn, frame, daylight);
 
       // 6b. Plankton clouds — bioluminescent mote clusters drifting mid-water
-      updateDrawPlankton(ctx, plankton, W, H, frame, daylight);
+      updateDrawPlankton(ctx, plankton, W, H, frame, daylight, flashMult);
 
       // 7. Ocean current particle field
       drawCurrentParticles(ctx, currentParticles, W, H, frame);
@@ -3969,6 +4558,9 @@ export default function AquariumCanvas({ entities, onEntityClick }) {
 
       // 7c. Bubble chains rising from coral tips and rocks
       updateDrawBubbleChains(ctx, bubbleChains, frame);
+
+      // 7a-deep. Deep background fish layers — faint distant silhouette schools
+      updateDrawDeepLayers(ctx, deepLayers, W, H, frame, daylight, px, py);
 
       // 7b. Bait fish school (ambient, non-interactive, behind main entities)
       updateBaitSchool(baitSchool, W, H, frame);
@@ -3993,6 +4585,24 @@ export default function AquariumCanvas({ entities, onEntityClick }) {
       // 7h. Shark — apex predator that passes through periodically
       updateShark(shark, W, H, fish, stingrays, inkClouds);
       drawShark(ctx, shark, frame);
+      // Shark wake turbulence — emit from tail tip while active
+      if (shark.active && shark.tail.length > 0) {
+        const tail = shark.tail[shark.tail.length - 1];
+        const sharkSpeed = Math.sqrt(shark.vx * shark.vx + shark.vy * shark.vy);
+        if (sharkSpeed > 0.18 && frame % 2 === 0) {
+          spawnTurbulence(turbulence, tail.x, tail.y, sharkSpeed * 4.5, shark.dir);
+        }
+      }
+      // Hunting stingray turbulence — emit when chasing prey
+      stingrays.forEach(r => {
+        if (r._hunting && frame % 3 === 0) {
+          const speed = Math.sqrt(r.vx * r.vx + r.vy * r.vy);
+          spawnTurbulence(turbulence, r.x - Math.cos(r.dir) * (r.size || 20) * 0.8,
+                          r.y - Math.sin(r.dir) * (r.size || 20) * 0.8, speed * 3.5, r.dir);
+        }
+      });
+      // Draw and update turbulence pool
+      updateDrawTurbulence(ctx, turbulence);
 
       // 7h. Tidal current — periodic directional sweep
       updateTidalCurrent(tidalCurrent, frame);
@@ -4019,22 +4629,36 @@ export default function AquariumCanvas({ entities, onEntityClick }) {
       updateStingrays(stingrays, W, H, fish, inkClouds);
       updateSeahorses(seahorses, W, H);
       updateCrabs(crabs, W, H);
-      updateTurtles(turtles, W, H);
+      updateTurtles(turtles, W, H, bubbles);
 
       // 8b. Depth fog haze bands
       drawDepthFog(ctx, W, H, frame);
 
-      // 8c. Bioluminescent entity trails — brighter at night
-      drawEntityTrails(ctx, fish, jellies, stingrays, seahorses, turtles, daylight);
+      // 8c. Bioluminescent entity trails — brighter at night + during flash
+      drawEntityTrails(ctx, fish, jellies, stingrays, seahorses, turtles, daylight, flashMult);
+
+      // Pre-compute ray illumination level for each entity position
+      // (reuse the same zone test as drawDustInRays — entity in shaft = lit up)
+      function getRayIllum(ex, ey) {
+        if (daylight < 0.12) return 0; // no rays at deep night
+        let maxI = 0;
+        rays.forEach(ray => {
+          const rayX = ray.x + px * 1.5;
+          const half  = ray.width * 0.5 * (0.25 + (ey / H) * 0.80);
+          const dist  = Math.abs(ex - rayX);
+          if (dist < half) maxI = Math.max(maxI, (1 - dist / half) * daylight);
+        });
+        return maxI;
+      }
 
       // Sort all animals back-to-front by depth before drawing (painter's algorithm)
       const depthSorted = [
-        ...turtles.map(t => ({ ...t, _draw: (isSel, isHov) => drawTurtle(ctx, t, frame, isSel, isHov) })),
-        ...stingrays.map(r => ({ ...r, _draw: (isSel, isHov) => drawStingray(ctx, r, frame, isSel, isHov) })),
-        ...seahorses.map(s => ({ ...s, _draw: (isSel, isHov) => drawSeahorse(ctx, s, frame, isSel, isHov) })),
-        ...crabs.map(c => ({ ...c, _draw: (isSel, isHov) => drawCrab(ctx, c, frame, isSel, isHov) })),
-        ...fish.map(f => ({ ...f, _draw: (isSel, isHov) => drawFish(ctx, f, isSel, isHov) })),
-        ...jellies.map(j => ({ ...j, _draw: (isSel, isHov) => drawJellyfish(ctx, j, frame, isSel, isHov) })),
+        ...turtles.map(t  => ({ ...t,  _draw: (isSel, isHov, illum) => drawTurtle(ctx, t, frame, isSel, isHov) })),
+        ...stingrays.map(r => ({ ...r,  _draw: (isSel, isHov, illum) => drawStingray(ctx, r, frame, isSel, isHov) })),
+        ...seahorses.map(s => ({ ...s,  _draw: (isSel, isHov, illum) => drawSeahorse(ctx, s, frame, isSel, isHov) })),
+        ...crabs.map(c     => ({ ...c,  _draw: (isSel, isHov, illum) => drawCrab(ctx, c, frame, isSel, isHov) })),
+        ...fish.map(f      => ({ ...f,  _draw: (isSel, isHov, illum) => drawFish(ctx, f, isSel, isHov, illum) })),
+        ...jellies.map(j   => ({ ...j,  _draw: (isSel, isHov, illum) => drawJellyfish(ctx, j, frame, isSel, isHov, illum) })),
       ].sort((a, b) => (a.depth ?? 1) - (b.depth ?? 1));
 
       // 9–14. Draw creatures back-to-front with depth alpha + focus dimming when selected
@@ -4053,14 +4677,31 @@ export default function AquariumCanvas({ entities, onEntityClick }) {
         const dof = isSel || isHov ? 0 : Math.max(0, (0.42 - (e.depth ?? 1)) * 4.5);
         const blurPx = dof > 0.1 ? Math.min(dof, 2.8).toFixed(1) : 0;
 
+        // Compute ray illumination for this entity's position
+        const illum = isSel || isHov ? 0 : getRayIllum(e.x, e.y);
+
         ctx.save();
         ctx.globalAlpha = finalAlpha;
         if (blurPx > 0) ctx.filter = `blur(${blurPx}px)`;
         ctx.translate(e.x, e.y);
         ctx.scale(perspScale, perspScale);
         ctx.translate(-e.x, -e.y);
-        e._draw(isSel, isHov);
+        e._draw(isSel, isHov, illum);
         ctx.restore();
+
+        // Illumination overlay — bright shaft of light on creature when in a ray
+        if (illum > 0.08 && !isSel) {
+          const iR = (e.size || 14) * 1.6;
+          const ig = ctx.createRadialGradient(e.x, e.y - (e.size || 14) * 0.3, 0, e.x, e.y, iR);
+          ig.addColorStop(0,   `rgba(220,240,255,${illum * 0.22 * finalAlpha})`);
+          ig.addColorStop(0.5, `rgba(160,210,255,${illum * 0.09 * finalAlpha})`);
+          ig.addColorStop(1,   'rgba(100,170,230,0)');
+          ctx.save();
+          ctx.globalCompositeOperation = 'screen';
+          ctx.beginPath(); ctx.arc(e.x, e.y, iR, 0, Math.PI * 2);
+          ctx.fillStyle = ig; ctx.fill();
+          ctx.restore();
+        }
 
         // Blue water-absorption tint for distant entities
         if (!isSel && !isHov) {
@@ -4208,6 +4849,36 @@ export default function AquariumCanvas({ entities, onEntityClick }) {
       const edgeB = ctx.createLinearGradient(0, H, 0, H * 0.92);
       edgeB.addColorStop(0, 'rgba(0,3,10,0.52)'); edgeB.addColorStop(1, 'rgba(0,3,10,0)');
       ctx.fillStyle = edgeB; ctx.fillRect(0, H * 0.92, W, H * 0.08);
+
+      // 18b. Water light absorption — red & green absorbed with depth, leaving blue-cold water
+      // Upper zone (surface): slight warm/yellow tint from sunlight penetration
+      // Deep zone: progressive blue dominance as red/green are absorbed
+      {
+        const absorbStrength = 0.85 * daylight; // weaker at night (bioluminescence compensates)
+
+        // Sunlit warm zone (top 18%)
+        const warmZone = ctx.createLinearGradient(0, 0, 0, H * 0.18);
+        warmZone.addColorStop(0,   `rgba(255,200,100,${0.038 * absorbStrength})`);
+        warmZone.addColorStop(0.5, `rgba(220,170, 80,${0.018 * absorbStrength})`);
+        warmZone.addColorStop(1,   'rgba(0,0,0,0)');
+        ctx.fillStyle = warmZone; ctx.fillRect(0, 0, W, H * 0.18);
+
+        // Depth absorption — full height gradient, strongest at bottom
+        const depthAbsorb = ctx.createLinearGradient(0, H * 0.10, 0, H);
+        depthAbsorb.addColorStop(0,    'rgba(0,20,60,0)');
+        depthAbsorb.addColorStop(0.30, `rgba(0,28,75,${0.04 * absorbStrength})`);
+        depthAbsorb.addColorStop(0.60, `rgba(0,18,60,${0.10 * absorbStrength})`);
+        depthAbsorb.addColorStop(0.85, `rgba(0,12,45,${0.18 * absorbStrength})`);
+        depthAbsorb.addColorStop(1,    `rgba(0, 8,35,${0.26 * absorbStrength})`);
+        ctx.fillStyle = depthAbsorb; ctx.fillRect(0, 0, W, H);
+
+        // Mid-water cyan scatter — the characteristic "blue water" color in the 30-70% zone
+        const scatter = ctx.createLinearGradient(0, H * 0.28, 0, H * 0.72);
+        scatter.addColorStop(0,   'rgba(0,40,80,0)');
+        scatter.addColorStop(0.5, `rgba(0,55,100,${0.055 * absorbStrength})`);
+        scatter.addColorStop(1,   'rgba(0,40,80,0)');
+        ctx.fillStyle = scatter; ctx.fillRect(0, H * 0.28, W, H * 0.44);
+      }
 
       // 19. Global fade-in on canvas init (first 80 frames)
       if (frame < 80) {

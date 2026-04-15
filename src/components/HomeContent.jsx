@@ -138,7 +138,7 @@ export default function HomeContent({ onNavigate }) {
     const el = mascotRef.current;
     if (!el) return;
     el.style.animation = 'none';
-    void el.offsetHeight; // force reflow so browser resets the animation
+    void el.offsetHeight;
     el.style.animation = 'hc-jump 0.9s ease-in-out 0s 3';
   }
 
@@ -164,7 +164,7 @@ export default function HomeContent({ onNavigate }) {
     { iconKey: 'juno',     label: 'Talk to Juno',      sub: 'Your signals, insights & context',  onClick: () => navigate(boardPath),        accent: B.primary  },
     { iconKey: 'graph',    label: 'Knowledge Graph',    sub: 'Your orbit map & signals',          onClick: () => onNavigate?.('moss'),       accent: '#7A6E9E'  },
     { iconKey: 'database', label: 'Personal Database',  sub: 'Files, emails, health & notes',     onClick: () => onNavigate?.('database'),   accent: '#A07850'  },
-    { iconKey: 'apps',     label: 'Connect Apps',       sub: 'Manage your integrations',          onClick: () => onNavigate?.('connections'), accent: '#5A967A'  },
+    { iconKey: 'apps',     label: 'Connect Apps',       sub: 'Manage your integrations',          onClick: () => navigate('/apps'),          accent: '#5A967A'  },
   ];
 
   return (
@@ -182,6 +182,11 @@ export default function HomeContent({ onNavigate }) {
         @keyframes hc-up {
           from { opacity: 0; transform: translateY(18px); }
           to   { opacity: 1; transform: translateY(0);    }
+        }
+        @keyframes hc-blink {
+          0%, 94%, 100% { transform: scaleY(0); }
+          96%            { transform: scaleY(1); }
+          98%            { transform: scaleY(0); }
         }
         @keyframes hc-bob {
           0%, 100% { transform: translateX(-50%) translateY(0);   }
@@ -215,18 +220,43 @@ export default function HomeContent({ onNavigate }) {
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0, backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E")`, opacity: 0.5 }}/>
 
         {/* Mascot */}
-        <div style={{ position: 'relative', zIndex: 1, animation: 'hc-up 0.55s ease both' }}>
+        <div
+          ref={mascotRef}
+          style={{ position: 'relative', zIndex: 1, animation: 'hc-up 0.55s ease both, hc-jump 0.9s ease-in-out 0.4s 3', transformOrigin: 'bottom center' }}
+        >
           <img
-            ref={mascotRef}
             src="/juno_mascot.png"
             alt="Juno"
-            style={{
-              width: 260, height: 260,
-              position: 'relative', zIndex: 1,
-              animation: 'hc-jump 0.9s ease-in-out 0.4s 3',
-              transformOrigin: 'bottom center',
-            }}
+            style={{ width: 260, height: 260, display: 'block' }}
           />
+          {/* Left eye blink cover */}
+          <div style={{
+            position:        'absolute',
+            left:            '32%',
+            top:             '43%',
+            width:           '22%',
+            height:          '22%',
+            background:      '#415A8C',
+            borderRadius:    '50%',
+            transformOrigin: 'center top',
+            transform:       'scaleY(0)',
+            animation:       'hc-blink 3s ease-in-out 1.5s infinite',
+            pointerEvents:   'none',
+          }}/>
+          {/* Right eye blink cover */}
+          <div style={{
+            position:        'absolute',
+            left:            '56%',
+            top:             '38%',
+            width:           '17%',
+            height:          '17%',
+            background:      '#415A8C',
+            borderRadius:    '50%',
+            transformOrigin: 'center top',
+            transform:       'scaleY(0)',
+            animation:       'hc-blink 3s ease-in-out 1.5s infinite',
+            pointerEvents:   'none',
+          }}/>
         </div>
 
         {/* Greeting */}

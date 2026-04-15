@@ -15,7 +15,7 @@ const NCFG = {
   'center':       { col:[255,222,60],  glo:[255,120,0],  sz:14, rays:true  },
   'contact-warm': { col:[255,185,52],  glo:[255,90,0],   sz:8              },
   'contact-mid':  { col:[255,112,44],  glo:[175,50,0],   sz:7              },
-  'contact-cold': { col:[138,88,55],   glo:[72,34,10],   sz:4              },
+  'contact-cold': { col:[158,104,68],   glo:[88,42,18],   sz:4              },
   'event':        { col:[255,62,98],   glo:[155,14,44],  sz:7              },
   'plan':         { col:[72,138,255],  glo:[14,60,200],  sz:6              },
   'instagram':    { col:[255,44,155],  glo:[162,0,92],   sz:9              },
@@ -69,7 +69,8 @@ export default function FireflyCanvas({ entities, onEntityClick }) {
     const canvas = canvasRef.current; if (!canvas) return;
     const par = canvas.parentElement, ctx = canvas.getContext('2d');
     let W=0, H=0, rafId;
-    let cachedBg=null, cachedNeb1=null, cachedNeb2=null, cachedVg=null, cachedBgW=0, cachedBgH=0;
+    let cachedBg=null, cachedNeb1=null, cachedNeb2=null, cachedNeb3=null, cachedVg=null, cachedBgW=0, cachedBgH=0;
+    let initialZoomSet=false;
 
     const S = {
       rotX:0, rotY:.5, zoom:1, targetZoom:1,
@@ -133,7 +134,12 @@ export default function FireflyCanvas({ entities, onEntityClick }) {
     function resize() {
       W=par.offsetWidth; H=par.offsetHeight;
       canvas.width=W; canvas.height=H;
-      cachedBg=null; cachedNeb1=null; cachedNeb2=null; cachedVg=null; // invalidate all cached gradients on resize
+      // Responsive initial zoom — maintain visual proportion across screen sizes
+      if (!initialZoomSet) {
+        const z=Math.min(1.75,Math.max(0.52,Math.min(W,H)/680));
+        S.zoom=z; S.targetZoom=z; initialZoomSet=true;
+      }
+      cachedBg=null; cachedNeb1=null; cachedNeb2=null; cachedNeb3=null; cachedVg=null; // invalidate all cached gradients on resize
     }
     resize();
 
@@ -174,11 +180,18 @@ export default function FireflyCanvas({ entities, onEntityClick }) {
           S.rotX += (S.homeX - S.rotX) * 0.055;
           S.rotY += dY * 0.055;
           S.velX=0; S.velY=0;
-          if (Math.abs(S.homeX-S.rotX)<0.008 && Math.abs(dY)<0.008)
+          if (Math.abs(S.homeX-S.rotX)<0.008 && Math.abs(dY)<0.008) {
             S.homeX=S.homeY=null; // arrived
+            // Arrival burst — celebrate the selected node reaching the front face
+            const arrNode=projNodes.find(n=>n.id===S.sel?.id);
+            if (arrNode) emitBurst(arrNode.sx,arrNode.sy,nc(arrNode.type).col);
+          }
         } else {
-          // Normal: auto-rotate when idle, inertia otherwise
-          const spin = (S.mouseOnCanvas || S.sel) ? 0 : .0022;
+          // Grace period: don't resume auto-rotate until 90 frames (~1.5s) after mouse leaves
+          if (!S.mouseOnCanvas && !S.drag) S.idleFrames=(S.idleFrames||0)+1; else S.idleFrames=0;
+          // Normal: auto-rotate when idle, eased in over 60 frames after grace period
+          const spinEase=Math.min(1,Math.max(0,((S.idleFrames||0)-90)/60));
+          const spin = (S.mouseOnCanvas || S.sel || (S.idleFrames||0)<90) ? 0 : spinEase*.0022;
           S.rotY += S.velY + spin; S.velY *= .92;
           S.rotX += S.velX;        S.velX *= .92;
         }
@@ -222,17 +235,30 @@ export default function FireflyCanvas({ entities, onEntityClick }) {
         cachedNeb2=ctx.createRadialGradient(cx*1.4,cy*.45,0,cx*1.4,cy*.45,Math.min(W,H)*.38);
         cachedNeb2.addColorStop(0,'rgba(14,55,120,0.05)'); cachedNeb2.addColorStop(1,'rgba(0,0,0,0)');
       }
+      if (!cachedNeb3) {
+        cachedNeb3=ctx.createRadialGradient(cx*.85,cy*.5,0,cx*.85,cy*.5,Math.min(W,H)*.28);
+        cachedNeb3.addColorStop(0,'rgba(40,12,80,0.048)'); cachedNeb3.addColorStop(1,'rgba(0,0,0,0)');
+      }
       ctx.fillStyle=cachedNeb1; ctx.fillRect(0,0,W,H);
       ctx.fillStyle=cachedNeb2; ctx.fillRect(0,0,W,H);
+      ctx.fillStyle=cachedNeb3; ctx.fillRect(0,0,W,H);
 
       // ── 2. Parallax star field ────────────────────────────────────────
       const pxS=-S.rotY*3, pyS=-S.rotX*2.5;
       BG.forEach(s=>{
         const bx=((s.fx*W+pxS*s.px*20+W*4))%W;
         const by=((s.fy*H+pyS*s.px*14+H*4))%H;
-        const al=(Math.sin(frame*.013+s.ph)*.5+.5)*.28+.08;
-        ctx.fillStyle=`rgba(200,210,240,${al.toFixed(3)})`;
-        ctx.fillRect(bx,by,s.sz>1.3?2:1,s.sz>1.3?2:1);
+        if (s.sz>1.3) {
+          // Larger foreground stars — more dramatic twinkle, cooler white
+          const al=(Math.sin(frame*.013+s.ph)*.5+.5)*.48+.10;
+          ctx.fillStyle=`rgba(240,238,255,${al.toFixed(3)})`;
+          ctx.fillRect(bx,by,2,2);
+        } else {
+          // Small background stars — subtle, warmer tint
+          const al=(Math.sin(frame*.013+s.ph)*.5+.5)*.20+.05;
+          ctx.fillStyle=`rgba(195,205,235,${al.toFixed(3)})`;
+          ctx.fillRect(bx,by,1,1);
+        }
       });
 
       // ── 2b. Shooting stars — rare ambient streaks ────────────────────
@@ -279,7 +305,7 @@ export default function FireflyCanvas({ entities, onEntityClick }) {
       ctx.beginPath();
       eqPts.forEach(([sx,sy],i)=>i===0?ctx.moveTo(sx,sy):ctx.lineTo(sx,sy));
       ctx.closePath();
-      ctx.strokeStyle=`rgba(255,185,55,${eqA.toFixed(3)})`; ctx.lineWidth=.9; ctx.stroke();
+      ctx.strokeStyle=`rgba(255,185,55,${eqA.toFixed(3)})`; ctx.lineWidth=.65+Math.sin(frame*.038)*.3; ctx.stroke();
 
       // Meridians — depth-aware: front hemisphere bright, back very faint (two-pass, one stroke per pass)
       for (const [frontPass, lineA, lineW] of [[true,0.16,0.6],[false,0.03,0.35]]) {
@@ -314,6 +340,26 @@ export default function FireflyCanvas({ entities, onEntityClick }) {
         ctx.strokeStyle=`rgba(130,80,210,${lineA})`; ctx.lineWidth=lineW; ctx.stroke();
       }
 
+      // Pole marks — small glowing dots at N and S poles, depth-faded
+      for (const poleY of [SPHERE_R,-SPHERE_R]) {
+        const [rx,ry,rz]=rot3(0,poleY,0,S.rotX,S.rotY);
+        if (rz < -SPHERE_R*.55) continue; // skip when very far behind
+        const [sx,sy]=proj(rx,ry,rz,cx,cy,S.zoom);
+        const dpt=.20+.80*((rz+SPHERE_R)/(SPHERE_R*2));
+        drawGlow(sx,sy,[165,105,230],2.5,11,dpt*.22);
+        ctx.beginPath(); ctx.arc(sx,sy,2.2,0,Math.PI*2);
+        ctx.fillStyle=`rgba(205,160,255,${(dpt*.52).toFixed(3)})`; ctx.fill();
+      }
+
+      // ── 3.5 Atmosphere halo ──────────────────────────────────────────
+      // Faint limb-glow ring just outside the sphere's projected silhouette
+      const atmR = SPHERE_R * S.zoom * 1.05;
+      const atm = ctx.createRadialGradient(cx,cy,atmR*.78,cx,cy,atmR*1.32);
+      atm.addColorStop(0,'rgba(0,0,0,0)');
+      atm.addColorStop(.38,'rgba(95,48,195,0.042)');
+      atm.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle=atm; ctx.beginPath(); ctx.arc(cx,cy,atmR*1.32,0,Math.PI*2); ctx.fill();
+
       // ── 4. Ambient fireflies ──────────────────────────────────────────
       FF.forEach(f=>{
         f.vx+=-f.x*.00014; f.vy+=-f.y*.00014; f.vz+=-f.z*.00014;
@@ -336,6 +382,12 @@ export default function FireflyCanvas({ entities, onEntityClick }) {
         }
       });
 
+      // Ambient warm-contact pings — spontaneous ripple when idle, keeps sphere alive
+      if (frame%145===0 && !S.sel && !S.hov) {
+        const warm=projNodes.filter(n=>n.type==='contact-warm'&&(n._dimF??0)>0.5&&n.depth>0.5);
+        if (warm.length>0) ripples.push({nodeId:warm[Math.floor(Math.random()*warm.length)].id,col:NCFG['contact-warm'].col,life:0,maxLife:58});
+      }
+
       // ── 5. Constellation lines ────────────────────────────────────────
       const cntr=projNodes.find(n=>n.type==='center');
       if (cntr){
@@ -345,13 +397,22 @@ export default function FireflyCanvas({ entities, onEntityClick }) {
           const dimF=n._dimF??1;
           const isHov=S.hov?.id===n.id, isSel=S.sel?.id===n.id;
           const lit=isHov||isSel;
-          // Highlighted: bright solid line; idle: faint dashed
-          const baseAl=n.depth*(n.importance??.5)*(isWarm?.18:.09)*dimF;
+          // Highlighted: bright solid line; idle: depth²-faded dashed (back hemisphere disappears)
+          const baseAl=n.depth*n.depth*(n.importance??.5)*(isWarm?.24:.12)*dimF;
           const al=lit ? Math.min(.88,n.depth*(isWarm?.62:.42)*dimF) : baseAl;
           if (al<.007) return;
           const lw=lit?(isWarm?1.6:1.0):(isWarm?.8:.55);
           ctx.beginPath(); ctx.moveTo(cntr.sx,cntr.sy); ctx.lineTo(n.sx,n.sy);
-          ctx.strokeStyle=rgba(c.col,al); ctx.lineWidth=lw;
+          if (lit) {
+            // Gradient: warm gold at center fades to node's own color — shows relationship visually
+            const lg=ctx.createLinearGradient(cntr.sx,cntr.sy,n.sx,n.sy);
+            lg.addColorStop(0,`rgba(255,210,60,${al.toFixed(3)})`);
+            lg.addColorStop(1,rgba(c.col,al));
+            ctx.strokeStyle=lg;
+          } else {
+            ctx.strokeStyle=rgba(c.col,al);
+          }
+          ctx.lineWidth=lw;
           if (!isWarm&&!lit) ctx.setLineDash([2,7]); ctx.stroke(); ctx.setLineDash([]);
         });
         // Cross-links between warm/mid contacts — more visible, respect proximity
@@ -360,7 +421,7 @@ export default function FireflyCanvas({ entities, onEntityClick }) {
           const dist=Math.hypot(warm[i].sx-warm[j].sx,warm[i].sy-warm[j].sy);
           if (dist<Math.min(W,H)*.25){
             const bf=(warm[i]._dimF??1)*(warm[j]._dimF??1);
-            const al=(warm[i].depth+warm[j].depth)/2*(warm[i].type==='contact-warm'&&warm[j].type==='contact-warm'?.12:.07)*bf;
+            const al=(warm[i].depth*warm[i].depth+warm[j].depth*warm[j].depth)/2*(warm[i].type==='contact-warm'&&warm[j].type==='contact-warm'?.16:.09)*bf;
             const lw=warm[i].type==='contact-warm'&&warm[j].type==='contact-warm'?.8:.5;
             ctx.beginPath(); ctx.moveTo(warm[i].sx,warm[i].sy); ctx.lineTo(warm[j].sx,warm[j].sy);
             ctx.strokeStyle=`rgba(255,160,40,${al.toFixed(3)})`; ctx.lineWidth=lw;
@@ -374,22 +435,48 @@ export default function FireflyCanvas({ entities, onEntityClick }) {
         const c=nc(n.type);
         const isCenter=n.type==='center', isSel=S.sel?.id===n.id, isHov=S.hov?.id===n.id;
         const imp=n.importance??.5;
-        // Hovered nodes pulse faster for a "feeling alive" effect
-        const pulseRate = isHov ? .062 : .038;
-        const pulse=Math.sin(frame*pulseRate+(n.phase??0))*.5+.5;
+        // Warm contacts: sharp cubic heartbeat; others: smooth sine; hovered: fast sine
+        let pulse;
+        if (n.type==='contact-warm' && !isHov) {
+          const hb = Math.sin(frame*.052+(n.phase??0));
+          pulse = Math.pow(Math.max(0,hb),3)*.85+.15; // cubic peak → sharp beats
+        } else {
+          const pulseRate = isHov ? .062 : .038;
+          pulse = Math.sin(frame*pulseRate+(n.phase??0))*.5+.5;
+        }
         const df=isCenter?1:n.depth;
         const dimF=n._dimF??1; // animated filter fade
 
-        let r=c.sz*(isCenter?1:(n.pd??1))*(1+imp*.28+pulse*.08);
+        // depth factor drives size: front nodes larger, back nodes smaller (stronger 3D parallax)
+        const depthScale = isCenter ? 1 : (0.68 + 0.32*df);
+        let r=c.sz*(isCenter?1:(n.pd??1))*depthScale*(1+imp*.28+pulse*.08);
         if (isSel) r*=1.4; if (isHov) r*=1.2;
         r=Math.max(isCenter?9:3,r);
 
         // Glow — warm contacts get extra ambient glow for hierarchy clarity
-        // warmBoost widens the glow radius for warm contacts (bigger halo = more prominent)
-        // but does NOT multiply the alpha — wider presence, not blinding brightness
-        const warmBoost = n.type==='contact-warm' ? 1.55 : n.type==='contact-mid' ? 1.22 : 1;
-        const glowR=r*(isCenter?5:isSel?5.5:isHov?4.5:3+imp)*warmBoost;
-        drawGlow(n.sx,n.sy,c.glo,r*.5,glowR,df*(isSel?.45:isHov?.32:.18+imp*.12)*dimF);
+        // warmBoost widens the glow radius; glowDepth shrinks it for back-hemisphere nodes
+        const warmBoost  = n.type==='contact-warm' ? 1.55 : n.type==='contact-mid' ? 1.22 : 1;
+        const glowDepth  = isCenter ? 1 : (0.52 + 0.48*df); // back nodes: smaller glow footprint
+        const glowR=r*(isCenter?5:isSel?5.5:isHov?4.5:3+imp)*warmBoost*glowDepth;
+        const glowAlpha=df*(isSel?.45:isHov?.32:.18+imp*.12)*dimF;
+        if (glowAlpha>0.015) drawGlow(n.sx,n.sy,c.glo,r*.5,glowR,glowAlpha); // skip gradient alloc for invisible nodes
+        // Selected: second cooler outer glow layer — distinct "selected" aura
+        if (isSel && dimF>0.15) drawGlow(n.sx,n.sy,[100,72,240],r,glowR*1.85,0.09*df*dimF);
+
+        // Center node: slow ambient breathing ring (expands and fades outward)
+        if (isCenter) {
+          const bT=(frame*.009)%(Math.PI*2);
+          const bR=r*(2.2+Math.sin(bT)*.9);
+          const bA=(Math.sin(bT)*.5+.5)*.10+.02;
+          ctx.beginPath(); ctx.arc(n.sx,n.sy,bR,0,Math.PI*2);
+          ctx.strokeStyle=rgba(c.col,bA); ctx.lineWidth=1.8-Math.sin(bT)*.9; ctx.stroke();
+          // Second ring offset by half-period — creates double-pulse effect
+          const bT2=(bT+Math.PI)%(Math.PI*2);
+          const bR2=r*(2.2+Math.sin(bT2)*.9);
+          const bA2=(Math.sin(bT2)*.5+.5)*.06+.01;
+          ctx.beginPath(); ctx.arc(n.sx,n.sy,bR2,0,Math.PI*2);
+          ctx.strokeStyle=rgba(c.glo,bA2); ctx.lineWidth=1.0-Math.sin(bT2)*.5; ctx.stroke();
+        }
 
         // Center rays — slow rotation for a breathing, meditative feel
         if (isCenter) for (let i=0;i<8;i++){
@@ -436,6 +523,18 @@ export default function FireflyCanvas({ entities, onEntityClick }) {
             const ir=Math.max(1.5,r*.3);
             ctx.beginPath(); ctx.arc(0,0,ir,0,Math.PI*2);
             ctx.strokeStyle='rgba(255,255,255,0.55)'; ctx.lineWidth=0.8; ctx.stroke();
+          } else if (n.type==='contact-warm') {
+            // Cross — "this is a person" marker, prominent on active contacts
+            const cs=Math.max(1.4,r*.25);
+            ctx.strokeStyle='rgba(255,255,255,0.65)'; ctx.lineWidth=0.8;
+            ctx.beginPath(); ctx.moveTo(-cs,0); ctx.lineTo(cs,0); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0,-cs); ctx.lineTo(0,cs); ctx.stroke();
+          } else if (n.type==='contact-mid') {
+            // Smaller cross — same visual language, lower prominence
+            const cs=Math.max(1.1,r*.18);
+            ctx.strokeStyle='rgba(255,255,255,0.42)'; ctx.lineWidth=0.65;
+            ctx.beginPath(); ctx.moveTo(-cs,0); ctx.lineTo(cs,0); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0,-cs); ctx.lineTo(0,cs); ctx.stroke();
           }
           ctx.restore();
         }
@@ -501,6 +600,38 @@ export default function FireflyCanvas({ entities, onEntityClick }) {
       });
       ctx.textBaseline='alphabetic';
 
+      // Center node name — always visible, gold pill below the center star
+      const cnNode = projNodes.find(n=>n.type==='center');
+      if (cnNode && cnNode.label) {
+        const cFs = Math.max(10, Math.round(Math.min(W,H)*.02));
+        ctx.font=`${cFs}px "DM Mono","Courier New",monospace`;
+        ctx.textAlign='center'; ctx.textBaseline='top';
+        const cTw = ctx.measureText(cnNode.label).width;
+        const cLy = cnNode.sy + Math.max(20, (cnNode._hr||48)/3.2) + 7;
+        const cPx=8, cPy=3;
+        const cRx=cnNode.sx-cTw/2-cPx, cRy=cLy-cPy, cRw=cTw+cPx*2, cRh=cFs+cPy*2;
+        ctx.fillStyle='rgba(3,1,16,0.78)';
+        rrect(cRx,cRy,cRw,cRh,4); ctx.fill();
+        ctx.strokeStyle='rgba(255,200,55,0.5)';
+        ctx.lineWidth=0.8; rrect(cRx,cRy,cRw,cRh,4); ctx.stroke();
+        ctx.fillStyle='rgba(255,230,120,0.90)';
+        ctx.fillText(cnNode.label, cnNode.sx, cLy);
+        // Stat line — contact count and event count, muted below the name
+        const cCount=nodePos.filter(n=>n.type.startsWith('contact')).length;
+        const eCount=nodePos.filter(n=>n.type==='event').length;
+        const statParts=[];
+        if (cCount>0) statParts.push(`${cCount} people`);
+        if (eCount>0) statParts.push(`${eCount} events`);
+        if (statParts.length>0) {
+          const statStr=statParts.join(' · ');
+          const statFs=Math.max(8,cFs-2);
+          ctx.font=`${statFs}px "DM Mono","Courier New",monospace`;
+          ctx.fillStyle='rgba(200,170,100,0.30)';
+          ctx.fillText(statStr, cnNode.sx, cLy+cRh+3);
+        }
+        ctx.textBaseline='alphabetic';
+      }
+
       // Empty state: all filters off → hint in sphere center
       const allDimmed = projNodes.every(n=>n.type==='center'||(n._dimF??1)<0.15);
       if (allDimmed) {
@@ -523,7 +654,9 @@ export default function FireflyCanvas({ entities, onEntityClick }) {
           const tw=ctx.measureText(nd.label).width;
           const hasStatus=!!nd.statusLabel;
           const dotOffset=24; // space for type dot on left side of tooltip
-          const bw=Math.max(tw+dotOffset+14, hasStatus ? ctx.measureText(nd.statusLabel||'').width+dotOffset+14 : 0);
+          let statusW=0;
+          if (hasStatus){ ctx.font=`${fs2}px "DM Mono","Courier New",monospace`; statusW=ctx.measureText(nd.statusLabel||'').width; ctx.font=`${fs}px "DM Mono","Courier New",monospace`; }
+          const bw=Math.max(tw+dotOffset+14, hasStatus ? statusW+dotOffset+14 : 0);
           const bh=hasStatus?fs+fs2+20:fs+14;
           // Clamp to canvas bounds
           const rawLx=nd.sx, rawLy=nd.sy-(nd._hr??14)-16;

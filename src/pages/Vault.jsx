@@ -3,14 +3,12 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import ContextBuilder from '../components/ContextBuilder';
 import MossBoard      from '../components/boards/MossBoard';
 import HomeContent    from '../components/HomeContent';
-import ConnectApps    from './ConnectApps';
 import { MOCK_PROFILES, PEOPLE } from '../data/mockProfiles';
 
 const TABS = [
-  { id: 'home',        label: 'Home'             },
-  { id: 'moss',        label: 'Knowledge Graph'   },
-  { id: 'database',    label: 'Personal Database' },
-  { id: 'connections', label: 'Connections'       },
+  { id: 'home',     label: 'Home'             },
+  { id: 'moss',     label: 'Knowledge Graph'   },
+  { id: 'database', label: 'Personal Database' },
 ];
 
 // Tabs that use a dark background
@@ -135,11 +133,6 @@ export default function Vault() {
             <MossBoard data={data} loading={loading} />
           </div>
         )}
-
-        {/* Connections */}
-        <div style={{ display: activeTab === 'connections' ? 'block' : 'none', width: '100%', height: '100%', overflow: 'auto', background: '#F3F1E8' }}>
-          <ConnectApps embedded />
-        </div>
 
       </div>
     </div>
