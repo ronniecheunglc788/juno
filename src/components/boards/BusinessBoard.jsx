@@ -184,7 +184,7 @@ function Loading() {
   return (
     <div style={{ width:'100vw', height:'100vh', background:'#FFFBF0', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'DM Sans',system-ui,sans-serif" }}>
       <div style={{ textAlign:'center' }}>
-        <div style={{ fontSize:9, letterSpacing:'2.5px', textTransform:'uppercase', color:'rgba(180,83,9,0.45)', marginBottom:10 }}>breeze</div>
+        <div style={{ fontSize:9, letterSpacing:'2.5px', textTransform:'uppercase', color:'rgba(180,83,9,0.45)', marginBottom:10 }}>juno</div>
         <div style={{ fontSize:12, color:'rgba(0,0,0,0.28)', fontWeight:300, letterSpacing:'0.3px' }}>Loading your context…</div>
       </div>
     </div>

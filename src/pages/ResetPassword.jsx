@@ -80,7 +80,7 @@ export default function ResetPassword() {
             color: 'rgba(10,10,10,0.25)', textTransform: 'uppercase',
             marginBottom: 32, userSelect: 'none',
           }}>
-            breeze
+            juno
           </div>
 
           {sent ? (

@@ -11,7 +11,24 @@
       "Bash(node:*)",
       "Bash(git add:*)",
       "Bash(git commit -m ':*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(npx vite:*)",
+      "Bash(grep -v \"//\")",
+      "Bash(xargs -0 sed -i s/breeze_user/juno_user/g)",
+      "Bash(xargs -0 sed -i 's/>breeze</>juno</g;:*)",
+      "Bash(xargs -0 sed -i 's/\\\\bbreeze\\\\b/juno/g')",
+      "Bash(grep -v \"//.*breeze\")",
+      "Bash(netstat -ano)",
+      "Bash(start:*)",
+      "Bash(npx --no-install vite build --mode development)",
+      "Bash(cat vite.config.*)",
+      "Bash(tasklist:*)",
+      "Bash(wc -l C:/Users/user/juno/src/components/boards/*.jsx)",
+      "Bash(head -5 C:/Users/user/juno/src/components/boards/*.jsx)",
+      "Bash(npx --no-install tsc --noEmit --strict false)",
+      "Bash(wc *)",
+      "Bash(npx --no tsc --noEmit --jsx react --target esnext --moduleResolution bundler src/components/boards/RootBoard.jsx)",
+      "Bash(xxd \"C:/Users/user/juno/src/color scheme\")"
     ]
   }
 }

@@ -62,7 +62,7 @@ export default function Login() {
       );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Sign in failed');
-      localStorage.setItem('breeze_user', JSON.stringify(data));
+      localStorage.setItem('juno_user', JSON.stringify(data));
       navigate('/board');
     } catch (err) { setError(err.message); }
     finally { setLoading(false); }
@@ -96,7 +96,7 @@ export default function Login() {
           color: 'rgba(10,10,10,0.25)', textTransform: 'uppercase',
           marginBottom: 32, userSelect: 'none',
         }}>
-          breeze
+          juno
         </div>
 
         <h2 style={{

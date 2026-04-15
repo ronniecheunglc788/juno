@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import PremedBoard   from '../components/boards/PremedBoard';
 import EngineerBoard from '../components/boards/CSBoard';
 import BusinessBoard from '../components/boards/BusinessBoard';
@@ -10,7 +10,7 @@ import FireflyBoard  from '../components/boards/FireflyBoard';
 import CurrentBoard  from '../components/boards/CurrentBoard';
 import MossBoard     from '../components/boards/MossBoard';
 import SeedlingBoard from '../components/boards/SeedlingBoard';
-import { MOCK_PROFILES } from '../data/mockProfiles';
+import { MOCK_PROFILES, PEOPLE } from '../data/mockProfiles';
 
 const ARCHETYPES = [
   { key: 'tendril',  label: 'The Tendril',  color: '#059669' },
@@ -21,6 +21,15 @@ const ARCHETYPES = [
   { key: 'seedling', label: 'The Seedling', color: '#7C3AED' },
 ];
 
+// Only the 5 archetypes that have canvas visuals — shown in the demo switcher
+const DEMO_ARCHETYPES = [
+  { key: 'current',  label: 'The Current',  color: '#DC2626' },
+  { key: 'firefly',  label: 'The Firefly',  color: '#D97706' },
+  { key: 'moss',     label: 'The Moss',     color: '#0F766E' },
+  { key: 'seedling', label: 'The Seedling', color: '#7C3AED' },
+  { key: 'tendril',  label: 'The Tendril',  color: '#059669' },
+];
+
 const ARCH_MAP = Object.fromEntries(ARCHETYPES.map(a => [a.key, a]));
 // Keep legacy keys working for existing users
 ARCH_MAP['engineer'] = { key: 'engineer', label: 'Engineer', color: '#2563EB' };
@@ -29,7 +38,7 @@ ARCH_MAP['business'] = { key: 'business', label: 'Business', color: '#B45309' };
 ARCH_MAP['premed']   = { key: 'premed',   label: 'Pre-Med',  color: '#059669' };
 ARCH_MAP['creative'] = { key: 'creative', label: 'Creative', color: '#7C3AED' };
 
-function UserNav({ user, onLogout, onArchetypeChange }) {
+function UserNav({ user, onLogout, onArchetypeChange, mockMode, mockKey }) {
   const [menuOpen,      setMenuOpen]      = useState(false);
   const [archOpen,      setArchOpen]      = useState(false);
   const [switching,     setSwitching]     = useState(false);
@@ -44,6 +53,13 @@ function UserNav({ user, onLogout, onArchetypeChange }) {
   async function handleArchetypeSelect(key) {
     if (key === user?.archetype || switching) return;
     setArchOpen(false);
+
+    // In demo/mock mode: just swap the URL param, no API call
+    if (mockMode) {
+      navigate(`/board?user=${key}`, { replace: true });
+      return;
+    }
+
     setSwitching(true);
     try {
       const r = await fetch('/api/user', {
@@ -54,7 +70,7 @@ function UserNav({ user, onLogout, onArchetypeChange }) {
       const updated = await r.json();
       if (r.ok && updated.id) {
         const newUser = { ...user, archetype: key };
-        localStorage.setItem('breeze_user', JSON.stringify(newUser));
+        localStorage.setItem('juno_user', JSON.stringify(newUser));
         onArchetypeChange(newUser);
       }
     } catch (e) {
@@ -90,7 +106,7 @@ function UserNav({ user, onLogout, onArchetypeChange }) {
         textTransform: 'uppercase',
         userSelect:    'none',
       }}>
-        breeze
+        juno
       </div>
 
       {/* Right side */}
@@ -146,7 +162,7 @@ function UserNav({ user, onLogout, onArchetypeChange }) {
                 <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '1.2px', textTransform: 'uppercase', color: 'rgba(0,0,0,0.28)', padding: '6px 10px 8px' }}>
                   Switch archetype
                 </div>
-                {ARCHETYPES.map(a => (
+                {(mockMode ? DEMO_ARCHETYPES : ARCHETYPES).map(a => (
                   <button
                     key={a.key}
                     onClick={() => handleArchetypeSelect(a.key)}
@@ -183,75 +199,83 @@ function UserNav({ user, onLogout, onArchetypeChange }) {
           )}
         </div>
 
-        {/* Divider */}
-        <div style={{ width: 1, height: 18, background: 'rgba(0,0,0,0.08)' }} />
+        {/* Divider — hidden in demo mode */}
+        {!mockMode && <div style={{ width: 1, height: 18, background: 'rgba(0,0,0,0.08)' }} />}
 
-        {/* Avatar + name button */}
-        <div
-          onClick={() => { setMenuOpen(o => !o); setArchOpen(false); }}
-          style={{
-            display:        'flex',
-            alignItems:     'center',
-            gap:            10,
-            padding:        '5px 14px 5px 6px',
-            borderRadius:   28,
-            cursor:         'pointer',
-            background:     menuOpen ? 'rgba(0,0,0,0.04)' : 'transparent',
-            border:         menuOpen ? '1px solid rgba(0,0,0,0.07)' : '1px solid transparent',
-            transition:     'background 0.15s, border-color 0.15s',
-            userSelect:     'none',
-          }}
-        >
-          <div style={{
-            width:          36,
-            height:         36,
-            borderRadius:   '50%',
-            background:     `${color}14`,
-            border:         `1.5px solid ${color}35`,
-            display:        'flex',
-            alignItems:     'center',
-            justifyContent: 'center',
-            fontSize:       13,
-            fontWeight:     700,
-            color:          color,
-            letterSpacing:  '0.5px',
-            flexShrink:     0,
-          }}>
-            {initials}
-          </div>
-          <span style={{ fontSize: 15, fontWeight: 500, color: 'rgba(0,0,0,0.55)', letterSpacing: '0.1px' }}>
-            {user?.name?.split(' ')[0] || ''}
-          </span>
-        </div>
-
-        {/* User dropdown */}
-        {menuOpen && (
-          <>
-            <div onClick={() => setMenuOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 99 }} />
+        {/* Avatar + name button + user dropdown — hidden in demo mode */}
+        {!mockMode && <>
+          <div
+            onClick={() => { setMenuOpen(o => !o); setArchOpen(false); }}
+            style={{
+              display:        'flex',
+              alignItems:     'center',
+              gap:            10,
+              padding:        '5px 14px 5px 6px',
+              borderRadius:   28,
+              cursor:         'pointer',
+              background:     menuOpen ? 'rgba(0,0,0,0.04)' : 'transparent',
+              border:         menuOpen ? '1px solid rgba(0,0,0,0.07)' : '1px solid transparent',
+              transition:     'background 0.15s, border-color 0.15s',
+              userSelect:     'none',
+            }}
+          >
             <div style={{
-              position:     'absolute',
-              top:          58,
-              right:        0,
-              width:        176,
-              background:   'rgba(255,255,255,0.99)',
-              border:       '1px solid rgba(0,0,0,0.09)',
-              borderRadius: 14,
-              boxShadow:    '0 8px 32px rgba(0,0,0,0.12)',
-              zIndex:       100,
-              overflow:     'hidden',
-              backdropFilter: 'blur(24px)',
-              WebkitBackdropFilter: 'blur(24px)',
+              width:          36,
+              height:         36,
+              borderRadius:   '50%',
+              background:     `${color}14`,
+              border:         `1.5px solid ${color}35`,
+              display:        'flex',
+              alignItems:     'center',
+              justifyContent: 'center',
+              fontSize:       13,
+              fontWeight:     700,
+              color:          color,
+              letterSpacing:  '0.5px',
+              flexShrink:     0,
             }}>
-              <button onClick={() => { setMenuOpen(false); navigate('/join?manage=true'); }} style={menuItemStyle}>
-                Connect apps
-              </button>
-              <div style={{ height: 1, background: 'rgba(0,0,0,0.06)', margin: '0 12px' }} />
-              <button onClick={() => { setMenuOpen(false); onLogout(); }} style={{ ...menuItemStyle, color: 'rgba(200,40,40,0.7)' }}>
-                Log out
-              </button>
+              {initials}
             </div>
-          </>
-        )}
+            <span style={{ fontSize: 15, fontWeight: 500, color: 'rgba(0,0,0,0.55)', letterSpacing: '0.1px' }}>
+              {user?.name?.split(' ')[0] || ''}
+            </span>
+          </div>
+
+          {/* User dropdown */}
+          {menuOpen && (
+            <>
+              <div onClick={() => setMenuOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 99 }} />
+              <div style={{
+                position:     'absolute',
+                top:          58,
+                right:        0,
+                width:        176,
+                background:   'rgba(255,255,255,0.99)',
+                border:       '1px solid rgba(0,0,0,0.09)',
+                borderRadius: 14,
+                boxShadow:    '0 8px 32px rgba(0,0,0,0.12)',
+                zIndex:       100,
+                overflow:     'hidden',
+                backdropFilter: 'blur(24px)',
+                WebkitBackdropFilter: 'blur(24px)',
+              }}>
+                <button onClick={() => { setMenuOpen(false); navigate(mockKey ? `/home?user=${mockKey}` : '/home'); }} style={menuItemStyle}>
+                  Home
+                </button>
+                <button onClick={() => { setMenuOpen(false); navigate(mockKey ? `/vault?user=${mockKey}` : '/vault'); }} style={menuItemStyle}>
+                  My Vault
+                </button>
+                <button onClick={() => { setMenuOpen(false); navigate('/apps'); }} style={menuItemStyle}>
+                  Connect apps
+                </button>
+                <div style={{ height: 1, background: 'rgba(0,0,0,0.06)', margin: '0 12px' }} />
+                <button onClick={() => { setMenuOpen(false); onLogout(); }} style={{ ...menuItemStyle, color: 'rgba(200,40,40,0.7)' }}>
+                  Log out
+                </button>
+              </div>
+            </>
+          )}
+        </>}
       </div>
     </div>
   );
@@ -280,20 +304,20 @@ export default function Board() {
   const [error, setError]     = useState('');
 
   useEffect(() => {
-    // ── Demo / mock mode: ?mock=tendril loads simulated data ─────────
-    const mockKey = searchParams.get('mock');
-    if (mockKey && MOCK_PROFILES[mockKey]) {
-      const profile = MOCK_PROFILES[mockKey];
+    // ── Demo / mock mode: ?user=tendril loads simulated data ─────────
+    const mockKey = searchParams.get('user');
+    const profile = PEOPLE[mockKey] ?? MOCK_PROFILES[mockKey];
+    if (mockKey && profile) {
       setUser(profile.user);
       setData(profile);
       setLoading(false);
       return;
     }
 
-    const saved = localStorage.getItem('breeze_user');
+    const saved = localStorage.getItem('juno_user');
     if (!saved) { navigate('/join'); return; }
     let u;
-    try { u = JSON.parse(saved); } catch { localStorage.removeItem('breeze_user'); navigate('/join'); return; }
+    try { u = JSON.parse(saved); } catch { localStorage.removeItem('juno_user'); navigate('/join'); return; }
     setUser(u);
 
     const url = `/api/board-data?userId=${u.id}&entityId=${u.entity_id}`;
@@ -333,7 +357,7 @@ export default function Board() {
   }, [navigate, searchParams]);
 
   function handleLogout() {
-    localStorage.removeItem('breeze_user');
+    localStorage.removeItem('juno_user');
     navigate('/join');
   }
 
@@ -344,6 +368,7 @@ export default function Board() {
   if (error) return <ErrorState error={error} />;
   if (!user)  return null;
 
+  const mockMode = !!searchParams.get('user');
   const arch  = user.archetype;
   const BoardComponent =
     arch === 'tendril'  ? TendrilBoard  :
@@ -359,7 +384,7 @@ export default function Board() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
-      <UserNav user={user} onLogout={handleLogout} onArchetypeChange={handleArchetypeChange} />
+      <UserNav user={user} onLogout={handleLogout} onArchetypeChange={handleArchetypeChange} mockMode={mockMode} mockKey={searchParams.get('user')} />
       <div style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
         <BoardComponent data={data} loading={loading} />
       </div>

@@ -68,7 +68,7 @@ export default function InsightPanel({ data, accent }) {
             textTransform: 'uppercase',
             color:         'rgba(0,0,0,0.35)',
           }}>
-            Breeze AI
+            Juno AI
           </span>
         </div>
         <button

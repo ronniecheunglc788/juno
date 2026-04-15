@@ -104,6 +104,7 @@ export default function ForceGraph({ nodes: nodeDefs, edges: edgeDefs, theme, on
   const canvasRef    = useRef(null);
   const nodesRef     = useRef([]);
   const selectedRef  = useRef(null);
+  const mouseRef     = useRef({ x: 0, y: 0 });
   // Stable ref for callback — never causes useEffect to re-run
   const onClickRef   = useRef(onNodeClick);
   useEffect(() => { onClickRef.current = onNodeClick; });
@@ -117,17 +118,21 @@ export default function ForceGraph({ nodes: nodeDefs, edges: edgeDefs, theme, on
     let H = parent.offsetHeight;
     selectedRef.current = null;
 
+    const ctx  = canvas.getContext('2d');
+    const snap = document.createElement('canvas');
+    const snapCtx = snap.getContext('2d');
+
     function resize() {
       W = parent.offsetWidth; H = parent.offsetHeight;
       canvas.width  = W * dpr; canvas.height = H * dpr;
       canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      snap.width = W * dpr; snap.height = H * dpr;
       if (nodesRef.current[0]?.type === 'center') {
         nodesRef.current[0].x = W / 2; nodesRef.current[0].y = H / 2;
       }
     }
 
-    const ctx = canvas.getContext('2d');
     resize();
 
     // Init nodes
@@ -146,6 +151,8 @@ export default function ForceGraph({ nodes: nodeDefs, edges: edgeDefs, theme, on
 
     // Pre-compute background elements for theme
     const bgMemo = theme.initBackground ? theme.initBackground(W, H) : null;
+
+    mouseRef.current = { x: W / 2, y: H / 2 };
 
     let frame = 0, rafId;
 
@@ -174,6 +181,8 @@ export default function ForceGraph({ nodes: nodeDefs, edges: edgeDefs, theme, on
         if (n.pinned) { n.x = W/2; n.y = H/2; return; }
         n.vx += (W/2 - n.x) * PHY.gravity;
         n.vy += (H/2 - n.y) * PHY.gravity;
+        // Jitter — makes high-urgency nodes visibly vibrate
+        if (n.jitter) { n.vx += (Math.random() - 0.5) * n.jitter * 2.2; n.vy += (Math.random() - 0.5) * n.jitter * 2.2; }
         n.vx *= PHY.damping; n.vy *= PHY.damping;
         n.x  += n.vx; n.y += n.vy;
         const p = PHY.boundary;
@@ -198,17 +207,18 @@ export default function ForceGraph({ nodes: nodeDefs, edges: edgeDefs, theme, on
       }
 
       // Per-theme background
-      if (theme.drawBackground) theme.drawBackground(ctx, W, H, frame, bgMemo);
+      if (theme.drawBackground) theme.drawBackground(ctx, W, H, frame, bgMemo, mouseRef.current);
 
       // Edges
+      const ea = theme.edgeAlpha ?? ['35', '12'];
       edges.forEach(({ si, ti, strong, edgeStyle }) => {
         const a = ns[si], b = ns[ti];
         const ca = theme.color(a.type), cb = theme.color(b.type);
         const style = edgeStyle ?? theme.edgeStyle ?? 'straight';
         const lg = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
-        lg.addColorStop(0, ca + '35'); lg.addColorStop(1, cb + '12');
+        lg.addColorStop(0, ca + ea[0]); lg.addColorStop(1, cb + ea[1]);
         ctx.strokeStyle = lg;
-        ctx.lineWidth   = strong ? 1.2 : 0.65;
+        ctx.lineWidth   = strong ? 1.4 : 0.7;
         drawEdge(ctx, a.x, a.y, b.x, b.y, style, frame);
         ctx.stroke();
       });
@@ -252,10 +262,24 @@ export default function ForceGraph({ nodes: nodeDefs, edges: edgeDefs, theme, on
           ctx.globalAlpha = 0.6; ctx.stroke(); ctx.globalAlpha = 1;
         }
 
-        ctx.shadowColor = color; ctx.shadowBlur = isSel ? 20 : 10;
+        const shadowBlur = isSel ? (theme.nodeShadowBlur ?? 20) * 1.6 : (theme.nodeShadowBlur ?? 10);
+        ctx.shadowColor = color; ctx.shadowBlur = shadowBlur;
         getShapePath(ctx, n.x, n.y, rr, shape);
-        ctx.fillStyle = color; ctx.globalAlpha = isSel ? 1 : 0.78;
+        ctx.fillStyle = color; ctx.globalAlpha = isSel ? 1 : 0.82;
         ctx.fill(); ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+
+        // 3-D sphere highlight — soft white radial sheen on top-left
+        if (theme.nodeStyle === 'sphere' && shape === 'circle') {
+          const hg = ctx.createRadialGradient(
+            n.x - rr * 0.32, n.y - rr * 0.36, rr * 0.02,
+            n.x + rr * 0.1,  n.y + rr * 0.1,  rr * 1.05
+          );
+          hg.addColorStop(0,   'rgba(255,255,255,0.52)');
+          hg.addColorStop(0.38,'rgba(255,255,255,0.12)');
+          hg.addColorStop(1,   'rgba(0,0,0,0.18)');
+          ctx.beginPath(); ctx.arc(n.x, n.y, rr, 0, Math.PI * 2);
+          ctx.fillStyle = hg; ctx.globalAlpha = 0.75; ctx.fill(); ctx.globalAlpha = 1;
+        }
 
         // Inner ring for certain types (business warmth)
         if (n.innerRing) {
@@ -274,6 +298,17 @@ export default function ForceGraph({ nodes: nodeDefs, edges: edgeDefs, theme, on
           ctx.globalAlpha = 1;
         }
       });
+
+      // Per-theme foreground (drawn AFTER nodes — enables true canvas reflection)
+      if (theme.drawForeground) {
+        // Snapshot current canvas into offscreen buffer, then pass it for reflection
+        if (snap.width !== W * dpr || snap.height !== H * dpr) {
+          snap.width = W * dpr; snap.height = H * dpr;
+        }
+        snapCtx.clearRect(0, 0, snap.width, snap.height);
+        snapCtx.drawImage(canvas, 0, 0);
+        theme.drawForeground(ctx, W, H, frame, bgMemo, mouseRef.current, snap);
+      }
 
       frame++;
     }
@@ -301,6 +336,7 @@ export default function ForceGraph({ nodes: nodeDefs, edges: edgeDefs, theme, on
 
     function handleMouseMove(e) {
       const [mx, my] = getXY(e);
+      mouseRef.current = { x: mx, y: my };
       const hit = hitNode(nodesRef.current, mx, my);
       canvas.style.cursor = (hit && hit.type !== 'center') ? 'pointer' : 'default';
     }

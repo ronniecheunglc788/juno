@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 const FONT = "'DM Sans','Inter',system-ui,sans-serif";
 
 function getUser() {
-  try { return JSON.parse(localStorage.getItem('breeze_user') || '{}'); } catch { return {}; }
+  try { return JSON.parse(localStorage.getItem('juno_user') || '{}'); } catch { return {}; }
 }
 
 // ── Main component ────────────────────────────────────────────────────────────

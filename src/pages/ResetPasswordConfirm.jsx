@@ -49,7 +49,7 @@ export default function ResetPasswordConfirm() {
       <div style={pageStyle}>
         <AmbientLight />
         <div style={{ position: 'relative', zIndex: 2, ...cardStyle }}>
-          <div style={wordmarkStyle}>breeze</div>
+          <div style={wordmarkStyle}>juno</div>
           <p style={{ fontSize: 14, color: 'rgba(180,40,40,0.8)' }}>Invalid or expired reset link.</p>
           <a href="/reset" style={linkStyle}>Request a new one</a>
         </div>
@@ -84,7 +84,7 @@ export default function ResetPasswordConfirm() {
           WebkitBackdropFilter: 'blur(24px)', border: '1px solid rgba(10,10,10,0.07)',
           borderRadius: 18, padding: '40px 36px', boxShadow: '0 4px 40px rgba(10,10,10,0.07)',
         }}>
-          <div style={wordmarkStyle}>breeze</div>
+          <div style={wordmarkStyle}>juno</div>
 
           {done ? (
             <>

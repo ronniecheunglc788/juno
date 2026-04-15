@@ -85,7 +85,7 @@ function LandingStep({ onSubmit, loading, error }) {
   return (
     <div style={{
       minHeight:     '100vh',
-      background:    '#F9F8F6',
+      background:    '#F3F1E8',
       display:       'flex',
       flexDirection: 'column',
       position:      'relative',
@@ -109,12 +109,12 @@ function LandingStep({ onSubmit, loading, error }) {
       }}>
         <div style={{
           fontSize: 12, fontWeight: 400, letterSpacing: '5px',
-          color: 'rgba(10,10,10,0.35)', textTransform: 'uppercase', userSelect: 'none',
+          color: '#4A6993', textTransform: 'uppercase', userSelect: 'none',
         }}>
-          breeze
+          juno
         </div>
         <a href="/login" style={{
-          fontSize: 13, color: 'rgba(10,10,10,0.4)', textDecoration: 'none',
+          fontSize: 13, color: '#8C9DAE', textDecoration: 'none',
           fontWeight: 400, letterSpacing: '0.2px',
         }}>
           Sign in
@@ -207,7 +207,7 @@ function LandingStep({ onSubmit, loading, error }) {
             margin:     '0 0 28px',
             lineHeight: 1.6,
           }}>
-            Connect your apps. Breeze builds a personalized view of your world.
+            Connect your apps. Juno builds a personalized view of your world.
           </p>
 
           <form onSubmit={e => {
@@ -311,7 +311,7 @@ function ConnectStep({ user, isManage, onDetect, loading, error }) {
   return (
     <div style={{
       minHeight:     '100vh',
-      background:    '#F9F8F6',
+      background:    '#F3F1E8',
       display:       'flex',
       alignItems:    'center',
       justifyContent:'center',
@@ -335,10 +335,10 @@ function ConnectStep({ user, isManage, onDetect, loading, error }) {
         {/* Wordmark */}
         <div style={{
           fontSize: 11, fontWeight: 400, letterSpacing: '5px',
-          color: 'rgba(10,10,10,0.25)', textTransform: 'uppercase',
+          color: '#4A6993', textTransform: 'uppercase',
           marginBottom: 32, userSelect: 'none',
         }}>
-          breeze
+          juno
         </div>
 
         <h2 style={{
@@ -348,7 +348,7 @@ function ConnectStep({ user, isManage, onDetect, loading, error }) {
           {isManage ? 'Manage connections' : 'Connect your apps'}
         </h2>
         <p style={{ fontSize: 13, color: 'rgba(10,10,10,0.38)', margin: '0 0 24px', lineHeight: 1.6 }}>
-          Breeze reads your data to understand what you need. Connect more apps for a richer board.
+          Juno reads your data to understand what you need. Connect more apps for a richer board.
         </p>
 
         {connectedCount > 0 && (
@@ -448,7 +448,7 @@ function ConnectStep({ user, isManage, onDetect, loading, error }) {
 function BuildingStep({ error }) {
   return (
     <div style={{
-      minHeight: '100vh', background: '#F9F8F6',
+      minHeight: '100vh', background: '#F3F1E8',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       fontFamily: "'DM Sans', system-ui, sans-serif",
       position: 'relative',
@@ -456,7 +456,7 @@ function BuildingStep({ error }) {
       <AmbientLight />
       <div style={{ position: 'relative', zIndex: 10, textAlign: 'center', maxWidth: 380 }}>
         <div style={{ fontSize: 11, fontWeight: 400, letterSpacing: '5px', color: 'rgba(10,10,10,0.25)', textTransform: 'uppercase', marginBottom: 40 }}>
-          breeze
+          juno
         </div>
         <h2 style={{ fontSize: 22, fontWeight: 400, color: 'rgba(10,10,10,0.8)', margin: '0 0 12px', letterSpacing: '-0.3px', fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic' }}>
           Building your board…
@@ -513,9 +513,9 @@ function PrimaryBtn({ children, disabled, ...props }) {
       disabled={disabled}
       style={{
         width: '100%', padding: '13px',
-        background: 'rgba(10,10,10,0.88)',
+        background: '#5375A7',
         border: 'none', borderRadius: 9,
-        color: '#F9F8F6', fontSize: 15, fontWeight: 500,
+        color: '#F3F1E8', fontSize: 15, fontWeight: 500,
         cursor: disabled ? 'not-allowed' : 'pointer',
         opacity: disabled ? 0.4 : 1,
         fontFamily: "'DM Sans', system-ui, sans-serif",
@@ -536,9 +536,9 @@ function DarkBtn({ children, disabled, style = {}, ...props }) {
       disabled={disabled}
       style={{
         width: '100%', padding: '13px',
-        background: 'rgba(10,10,10,0.85)',
+        background: '#5375A7',
         border: 'none', borderRadius: 9,
-        color: '#F9F8F6', fontSize: 15, fontWeight: 500,
+        color: '#F3F1E8', fontSize: 15, fontWeight: 500,
         cursor: 'pointer',
         fontFamily: "'DM Sans', system-ui, sans-serif",
         letterSpacing: '-0.1px',
@@ -563,13 +563,13 @@ export default function Onboard() {
   const [error, setError]     = useState('');
 
   useEffect(() => {
-    const saved = localStorage.getItem('breeze_user');
+    const saved = localStorage.getItem('juno_user');
     if (saved) {
       try {
         const u = JSON.parse(saved);
         if (isManage) { setUser(u); setStep(2); return; }
         if (u.archetype) navigate('/board');
-      } catch { localStorage.removeItem('breeze_user'); }
+      } catch { localStorage.removeItem('juno_user'); }
     }
   }, [navigate, isManage]);
 
@@ -583,7 +583,7 @@ export default function Onboard() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      localStorage.setItem('breeze_user', JSON.stringify(data));
+      localStorage.setItem('juno_user', JSON.stringify(data));
       setUser(data); setStep(2);
     } catch (err) { setError(err.message); }
     finally { setLoading(false); }
@@ -593,7 +593,7 @@ export default function Onboard() {
     if (loading) return;
     setStep(3);
     try {
-      const u = user || JSON.parse(localStorage.getItem('breeze_user') || '{}');
+      const u = user || JSON.parse(localStorage.getItem('juno_user') || '{}');
       const res = await fetch('/api/detect', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ entityId: u.entity_id, userId: u.id }),
@@ -601,7 +601,7 @@ export default function Onboard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       const updated = { ...u, archetype: data.archetype };
-      localStorage.setItem('breeze_user', JSON.stringify(updated));
+      localStorage.setItem('juno_user', JSON.stringify(updated));
       navigate('/board');
     } catch (err) { setError(err.message); setStep(2); }
   }

@@ -34,15 +34,15 @@ export const MOCK_PROFILES = {
       { title: 'Hackathon ends / judging', startRaw: ts(6, 14, 0), isAllDay: false },
     ],
     github: [
-      { name: 'widget-lab',    language: 'TypeScript',  lastCommit: ts(-1), isStale: false },
-      { name: 'portfolio-v3',  language: 'JavaScript',  lastCommit: ts(-3), isStale: false },
-      { name: 'habit-tracker', language: 'TypeScript',  lastCommit: ts(-2), isStale: false },
-      { name: 'design-system', language: 'CSS',         lastCommit: ts(-4), isStale: false },
-      { name: 'note-app',      language: 'TypeScript',  lastCommit: ts(-7), isStale: false },
-      { name: 'chrome-ext',    language: 'JavaScript',  lastCommit: ts(-10), isStale: false },
-      { name: 'ml-playground', language: 'Python',      lastCommit: ts(-20), isStale: false },
-      { name: 'api-wrapper',   language: 'TypeScript',  lastCommit: ts(-40), isStale: true },
-      { name: 'old-portfolio', language: 'HTML',        lastCommit: ts(-95), isStale: true },
+      { name: 'widget-lab',    language: 'TypeScript',  lastCommit: ts(-1),  isStale: false, stars: 14, openIssues: 3,  description: 'Drag-and-drop widget builder with snap-to-grid and live preview' },
+      { name: 'portfolio-v3',  language: 'JavaScript',  lastCommit: ts(-3),  isStale: false, stars: 8,  openIssues: 1,  description: 'Personal portfolio — third redesign, built with Astro + Framer Motion' },
+      { name: 'habit-tracker', language: 'TypeScript',  lastCommit: ts(-2),  isStale: false, stars: 22, openIssues: 5,  description: 'Streak-based habit tracking with Notion sync and weekly heatmaps' },
+      { name: 'design-system', language: 'CSS',         lastCommit: ts(-4),  isStale: false, stars: 6,  openIssues: 2,  description: 'Component tokens and utility classes shared across all projects' },
+      { name: 'note-app',      language: 'TypeScript',  lastCommit: ts(-7),  isStale: false, stars: 31, openIssues: 7,  description: 'Markdown notes app with real-time sync — PR #14 just merged' },
+      { name: 'chrome-ext',    language: 'JavaScript',  lastCommit: ts(-10), isStale: false, stars: 19, openIssues: 4,  description: 'Browser extension that surfaces Juno context inline while browsing' },
+      { name: 'ml-playground', language: 'Python',      lastCommit: ts(-20), isStale: false, stars: 5,  openIssues: 0,  description: 'Notebook experiments — image classification and embedding visualisations' },
+      { name: 'api-wrapper',   language: 'TypeScript',  lastCommit: ts(-40), isStale: true,  stars: 3,  openIssues: 0,  description: 'Thin wrapper around a campus API — dormant, waiting for v2 docs' },
+      { name: 'old-portfolio', language: 'HTML',        lastCommit: ts(-95), isStale: true,  stars: 1,  openIssues: 0,  description: 'Original portfolio from freshman year — kept for nostalgia' },
     ],
     notion: [
       { title: 'Project Ideas — April', lastEdited: '4/12/2026' },
@@ -72,6 +72,12 @@ export const MOCK_PROFILES = {
       { subject: 'Re: academic advisor meeting', from: 'Dr. Smith, Advisor', fromEmail: 'smith@premed.edu', date: ts(-4, 13), snippet: "Your EC list is strong. We should discuss the research abstract before April 20. Thursday 2pm?", isUnread: false, threadId: 't10', messageId: 'm10' },
       { subject: '120 clinical hours — certification letter', from: 'Volunteer Services', fromEmail: 'volunteer@cityhospital.org', date: ts(-5, 9), snippet: "You've completed 120 clinical hours. Certification letter attached. This satisfies most MD requirements...", isUnread: false, threadId: 't11', messageId: 'm11' },
       { subject: 'MCAT study group — Sunday 10am', from: 'Priya Patel', fromEmail: 'ppatel@university.edu', date: ts(-6, 18), snippet: "Two AAMC full-lengths back to back starting 10am Sunday. I have the C/P section notes to share...", isUnread: false, threadId: 't12', messageId: 'm12' },
+      { subject: 'Orgo office hours TODAY 3–5pm', from: 'Prof. Martinez', fromEmail: 'martinez@chem.edu', date: ts(0, 8), snippet: 'Holding extra office hours today 3–5pm in Chem 204 specifically to go over reaction mechanisms before Exam 4...', isUnread: true, threadId: 't13', messageId: 'm13' },
+      { subject: 'Biostatistics quiz — Friday', from: 'BIOS 3120', fromEmail: 'noreply@courses.edu', date: ts(-1, 9), snippet: 'Quiz 6 covers regression and survival analysis. Open-book, 45 minutes. Posted in course portal Friday 8am...', isUnread: true, threadId: 't14', messageId: 'm14' },
+      { subject: 'Re: AAMC school list — 2 more schools?', from: 'Dr. Smith, Advisor', fromEmail: 'smith@premed.edu', date: ts(-2, 16), snippet: 'Given your GPA and MCAT, I would strongly recommend adding Vanderbilt and Duke to your list before the deadline...', isUnread: true, threadId: 't15', messageId: 'm15' },
+      { subject: 'Financial aid verification needed', from: 'Financial Aid Office', fromEmail: 'finaid@university.edu', date: ts(-3, 11), snippet: 'ACTION REQUIRED: Please upload your 2025 tax documents by April 20 to maintain your scholarship award...', isUnread: true, threadId: 't16', messageId: 'm16' },
+      { subject: 'Chen Lab meeting — agenda for Wednesday', from: 'Dr. Chen, PI', fromEmail: 'lchen@university.edu', date: ts(-1, 17), snippet: "James, can you prep a 5-minute update on the expanded cohort results? Lab meeting is Wednesday 4pm...", isUnread: false, threadId: 't17', messageId: 'm17' },
+      { subject: 'Rent due April 20', from: 'Oakwood Apartments', fromEmail: 'billing@oakwoodapts.com', date: ts(-5, 10), snippet: 'Your monthly rent of $1,140 is due April 20. Auto-pay is not enrolled. Please log in to pay online...', isUnread: false, threadId: 't18', messageId: 'm18' },
     ],
     calendar: [
       { title: 'Organic Chem Exam 4', startRaw: ts(5, 9, 0), isAllDay: false },
@@ -83,6 +89,12 @@ export const MOCK_PROFILES = {
       { title: 'MCAT Practice Exam (full)', startRaw: ts(6, 8, 0), isAllDay: false },
       { title: 'Research Poster deadline', startRaw: ts(9, 23, 59), isAllDay: false },
       { title: 'MCAT Exam', startRaw: ts(32, 6, 30), isAllDay: false },
+      { title: 'Orgo Office Hours', startRaw: ts(0, 15, 0), isAllDay: false },
+      { title: 'Biostatistics Quiz', startRaw: ts(4, 8, 0), isAllDay: false },
+      { title: 'Chen Lab Meeting', startRaw: ts(2, 16, 0), isAllDay: false },
+      { title: 'MCAT Study Block (P/S)', startRaw: ts(1, 19, 0), isAllDay: false },
+      { title: 'Financial Aid Documents due', startRaw: ts(7, 23, 59), isAllDay: false },
+      { title: 'Solo Interview Practice', startRaw: ts(5, 18, 0), isAllDay: false },
     ],
     github: [],
     notion: [
@@ -204,7 +216,7 @@ export const MOCK_PROFILES = {
 
   // ── The Moss — the reflector ──────────────────────────────────────
   moss: {
-    user: { id: 'mock-moss', name: 'Zoe Kim', email: 'zoe@demo.juno', archetype: 'moss', entity_id: 'mock' },
+    user: { id: 'mock-moss', name: 'Ronnie Cheung', email: 'ronnie@demo.juno', archetype: 'moss', entity_id: 'mock' },
     emails: [
       { subject: 'Your sleep score this week: 82 (Optimal)', from: 'Oura Ring', fromEmail: 'insights@ouraring.com', date: ts(-1, 7), snippet: 'HRV: 58ms (+12% vs last week). Deep sleep: 1h 47m. Recovery trending up — your 10pm bedtime is working...', isUnread: true, threadId: 't1', messageId: 'm1' },
       { subject: 'Huberman Lab: cold exposure + cortisol', from: 'Huberman Lab', fromEmail: 'newsletter@hubermanlab.com', date: ts(-1, 9), snippet: 'The science of deliberate cold exposure on cortisol regulation, and why morning sunlight matters more than caffeine...', isUnread: false, threadId: 't2', messageId: 'm2' },
@@ -259,15 +271,25 @@ export const MOCK_PROFILES = {
   seedling: {
     user: { id: 'mock-seedling', name: 'Alex Rivera', email: 'alex@demo.juno', archetype: 'seedling', entity_id: 'mock' },
     emails: [
-      { subject: 'Financial aid disbursement — April 15', from: 'Financial Aid', fromEmail: 'finaid@university.edu', date: ts(-3, 10), snippet: 'Your spring financial aid of $4,200 will be disbursed April 15. Please verify your bank account info...', isUnread: true, threadId: 't1', messageId: 'm1' },
-      { subject: 'CS 101 — Assignment 2 now available', from: 'CS 101', fromEmail: 'noreply@courses.edu', date: ts(-1, 8), snippet: 'Assignment 2: loops and conditionals. Due April 20. Starter code provided. Late penalty: 10%/day...', isUnread: true, threadId: 't2', messageId: 'm2' },
-      { subject: 'Welcome to University', from: 'Student Services', fromEmail: 'welcome@university.edu', date: ts(-5, 9), snippet: "Welcome, Alex! Your student ID is ready at the Registrar. Your first week schedule is attached...", isUnread: false, threadId: 't3', messageId: 'm3' },
-      { subject: 'Re: your first week', from: 'Mom', fromEmail: 'mom@gmail.com', date: ts(-4, 20), snippet: "I'm so proud of you! Call me when you can. I packed snacks in that blue bag — don't forget to eat...", isUnread: false, threadId: 't4', messageId: 'm4' },
+      // Spotlight-worthy
+      { subject: 'Financial aid disbursement — action required', from: 'Financial Aid Office', fromEmail: 'finaid@university.edu', date: ts(-1, 9), snippet: 'Your spring aid of $4,200 disburses April 15. You must verify your bank account by April 14 or payment will be delayed.', isUnread: true, threadId: 't1', messageId: 'm1' },
+      // Assignments + classes
+      { subject: 'CS 101 — Assignment 2 now available', from: 'Prof. Chen', fromEmail: 'j.chen@university.edu', date: ts(-1, 8), snippet: 'Assignment 2: loops and conditionals. Due April 20. Starter code on the portal. Late penalty: 10%/day.', isUnread: true, threadId: 't2', messageId: 'm2' },
+      { subject: 'Study group for Calc midterm — this Friday', from: 'Jordan Lee', fromEmail: 'jordan.lee@university.edu', date: ts(-2, 16), snippet: "Hey! A few of us are studying Thursday 7pm in the library 3rd floor. Want to join? We have practice exams.", isUnread: true, threadId: 't5', messageId: 'm5' },
+      { subject: 'Your campus dining balance is low', from: 'Campus Dining', fromEmail: 'dining@university.edu', date: ts(-2, 11), snippet: 'Your Flex Dollars balance is $12.40. Add more funds online or at the cashier to avoid declined transactions.', isUnread: false, threadId: 't6', messageId: 'm6' },
+      // Personal
+      { subject: 'Re: your first week', from: 'Mom', fromEmail: 'mom@gmail.com', date: ts(-4, 20), snippet: "I'm so proud of you! Call me when you can. I packed snacks in that blue bag — don't forget to eat!", isUnread: false, threadId: 't4', messageId: 'm4' },
+      { subject: 'Welcome to University', from: 'Student Services', fromEmail: 'welcome@university.edu', date: ts(-5, 9), snippet: "Welcome, Alex! Your student ID is ready at the Registrar's office. Bring a government-issued ID.", isUnread: false, threadId: 't3', messageId: 'm3' },
+      { subject: 'Dorm internet setup guide', from: 'IT Help Desk', fromEmail: 'help@university.edu', date: ts(-6, 10), snippet: 'Connect to UniSecure using your student login. Instructions for Mac and Windows are attached.', isUnread: false, threadId: 't7', messageId: 'm7' },
     ],
     calendar: [
       { title: 'CS 101 Lecture', startRaw: ts(0, 10, 0), isAllDay: false },
+      { title: 'Calc midterm review', startRaw: ts(0, 14, 30), isAllDay: false },
       { title: 'Math 1A Discussion', startRaw: ts(1, 14, 0), isAllDay: false },
-      { title: 'CS 101 Assignment due', startRaw: ts(7, 23, 59), isAllDay: false },
+      { title: 'Financial aid deadline', startRaw: ts(2, 23, 59), isAllDay: false },
+      { title: 'Study group — library', startRaw: ts(3, 19, 0), isAllDay: false },
+      { title: 'CS 101 Assignment 2 due', startRaw: ts(7, 23, 59), isAllDay: false },
+      { title: 'Math 1A Midterm', startRaw: ts(9, 9, 0), isAllDay: false },
     ],
     github: [],
     notion: [],
@@ -275,4 +297,24 @@ export const MOCK_PROFILES = {
     instagram: null,
     connectedApps: ['googlecalendar', 'gmail'],
   },
+};
+
+// ── Person-named aliases — these are what the demo URLs use ───────
+// Rename user.name and user.id so the center node shows the right name.
+function as(profile, name, archetype) {
+  return {
+    ...profile,
+    user: { ...profile.user, id: `mock-${name.toLowerCase()}`, name, archetype: archetype ?? profile.user.archetype },
+  };
+}
+
+export const PEOPLE = {
+  karissa:  as(MOCK_PROFILES.tendril,  'Karissa'),
+  nigel:    as(MOCK_PROFILES.root,     'Nigel'),
+  ando:     as(MOCK_PROFILES.moss,     'Ando'),
+  chris:    as(MOCK_PROFILES.current,  'Chris'),
+  cindy:    as(MOCK_PROFILES.firefly,  'Cindy'),
+  cyanne:   as(MOCK_PROFILES.seedling, 'Cyanne'),
+  julie:    as(MOCK_PROFILES.firefly,  'Julie',  'creative'),
+  personal: MOCK_PROFILES.moss,  // Ronnie's personal page
 };

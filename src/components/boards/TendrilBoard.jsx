@@ -1,190 +1,180 @@
 import { useState, useMemo } from 'react';
-import BoardShell   from '../BoardShell';
-import ForceGraph   from '../ForceGraph';
-import NodeDetail   from '../NodeDetail';
-import DraftCompose from '../DraftCompose';
-import { useNodeScores } from '../../hooks/useNodeScores';
+import CityCanvas    from '../CityCanvas';
+import NodeDetail    from '../NodeDetail';
+import DraftCompose  from '../DraftCompose';
 
-// ── Tendril theme: organic growth, spiral arms, builder energy ─────
-const THEME = {
-  bg:        '#F0FDF4',
-  glow:      'rgba(5,150,105,0.07)',
-  label:     'rgba(5,40,15,0.50)',
-  labelFont: '10px "DM Sans","Inter",system-ui,sans-serif',
-  nodeShape: 'circle',
-  edgeStyle: 'bezier',
-  color: (type) => {
-    switch (type) {
-      case 'center':        return '#059669';
-      case 'project':       return '#10B981';
-      case 'project-stale': return '#86EFAC';
-      case 'idea':          return '#6EE7B7';
-      case 'collab':        return '#F59E0B';
-      case 'event':         return '#0EA5E9';
-      default:              return '#A7F3D0';
-    }
-  },
-  initBackground: (W, H) => {
-    const spirals = [];
-    for (let arm = 0; arm < 3; arm++) {
-      const pts = [];
-      for (let t = 0.2; t < Math.PI * 5.5; t += 0.12) {
-        const r = t * 22;
-        const a = t + arm * (Math.PI * 2 / 3);
-        pts.push({ x: W / 2 + Math.cos(a) * r, y: H / 2 + Math.sin(a) * r });
-      }
-      spirals.push(pts);
-    }
-    return { spirals };
-  },
-  drawBackground: (ctx, W, H, _frame, memo) => {
-    if (!memo) return;
-    ctx.lineWidth = 0.9;
-    memo.spirals.forEach((pts, ai) => {
-      ctx.strokeStyle = `rgba(5,150,105,${0.055 - ai * 0.012})`;
-      ctx.beginPath();
-      pts.forEach((p, i) => { i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y); });
-      ctx.stroke();
-    });
-  },
-};
+// ── Karissa — The City ────────────────────────────────────────────
+// Each building = a GitHub repo (taller + more lit = more active).
+// Walking people = email contacts (faster = recently active).
+// Cars driving past = calendar deadlines (redder/faster = sooner).
+
+// Building plots in the 15×11 grid (v-roads at cols 5,10; h-roads at rows 3,7)
+// Parks at (1,1),(7,1),(13,1),(12,2),(6,5),(2,6),(13,6),(1,9),(8,9),(12,10)
+// Ordered most-visible center-front first
+const BUILDING_PLOTS = [
+  // Center blocks — most visible
+  [6,5],[7,5],[8,5],[9,5],[6,4],[7,4],[8,4],[9,4],
+  [6,6],[7,6],[8,6],[9,6],
+  // Left-center
+  [1,4],[2,4],[3,4],[4,4],[1,5],[2,5],[3,5],[4,5],
+  [1,6],[3,6],[4,6],
+  // Right-center
+  [11,4],[12,4],[13,4],[14,4],[11,5],[12,5],[13,5],[14,5],
+  [11,6],[12,6],[14,6],
+  // Upper strips rows 1-2
+  [6,2],[7,2],[8,2],[9,2],[6,1],[8,1],[9,1],
+  [0,4],[0,5],[0,6],[4,2],[3,2],[2,2],[0,2],[0,1],
+  [11,2],[13,2],[14,2],[11,1],[12,1],[14,1],
+  // Upper row 0
+  [0,0],[1,0],[2,0],[3,0],[4,0],[6,0],[7,0],[8,0],[9,0],[11,0],[12,0],[13,0],[14,0],
+  [2,1],[3,1],[4,1],
+  // Lower strips rows 8-10
+  [6,8],[7,8],[8,8],[9,8],[6,9],[7,9],[9,9],[6,10],[7,10],[8,10],[9,10],
+  [0,8],[1,8],[2,8],[3,8],[4,8],[0,9],[2,9],[3,9],[4,9],[0,10],[1,10],[2,10],[3,10],[4,10],
+  [11,8],[12,8],[13,8],[14,8],[11,9],[12,9],[13,9],[14,9],[11,10],[13,10],[14,10],
+];
 
 function staleDays(d) {
-  if (!d) return 999;
-  return Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
+  return d ? Math.floor((Date.now() - new Date(d).getTime()) / 86400000) : 999;
 }
-function isCollab(em) {
-  const s = ((em.subject || '') + (em.from || '') + (em.fromEmail || '')).toLowerCase();
-  return ['figma','linear','notion','vercel','github','stripe','openai','anthropic',
-    'recruiter','recruiting','internship','offer','interview','opportunity'].some(k => s.includes(k));
-}
-function subjectWords(s, n = 4) {
-  return (s || '').replace(/^(Re:|Fwd:|RE:|Fw:)\s*/i, '').trim().split(/\s+/).slice(0, n).join(' ') || 'Email';
-}
-function dayHint(raw) {
-  const d = Math.floor((new Date(raw) - Date.now()) / 86400000);
-  if (d === 0) return 'today';
-  if (d === 1) return 'tomorrow';
-  return new Date(raw).toLocaleDateString('en-US', { weekday: 'short' });
+function firstName(n) { return (n || '').split(' ')[0] || 'Contact'; }
+
+// Floors based on recency — more recently active = taller building
+function floorsFromDays(days) {
+  if (days <= 1)  return 7;
+  if (days <= 3)  return 6;
+  if (days <= 7)  return 5;
+  if (days <= 14) return 4;
+  if (days <= 30) return 3;
+  return 2;
 }
 
+const CAR_COLORS = {
+  today:    '#FF4444',
+  tomorrow: '#FF8844',
+  week:     '#FFD700',
+  soon:     '#44DDBB',
+  far:      '#8899AA',
+};
+
 export default function TendrilBoard({ data, loading }) {
-  if (loading) return <Loading />;
   const [selected,   setSelected]   = useState(null);
   const [draftEmail, setDraftEmail] = useState(null);
 
-  const baseNodes = useMemo(() => {
-    const name    = data?.user?.name?.split(' ')[0] || 'you';
-    const repos   = (data?.github  || []).slice(0, 9);
-    const ideas   = (data?.notion  || []).slice(0, 5);
-    const collabs = (data?.emails  || []).filter(isCollab).slice(0, 12);
-    const events  = (data?.calendar || []).slice(0, 7);
-
-    const ns = [{ id: 'center', type: 'center', label: name, size: 20 }];
-
-    // Repos — upper-left arc (builder's workspace)
-    repos.forEach((r, i) => {
-      const angle = -Math.PI * 0.85 + (i / Math.max(repos.length - 1, 1)) * (Math.PI * 0.58);
-      const days  = staleDays(r.lastCommit);
-      const stale = days > 30;
-      const imp   = stale ? 0.18 : Math.max(0.4, 1 - days / 30);
-      ns.push({
-        id: `repo-${i}`, type: stale ? 'project-stale' : 'project',
-        label: r.name,
-        size: stale ? 6 : Math.round(7 + imp * 4),
-        angle, dist: 280 + i * 26, phase: i * 0.65,
-        importance: imp,
-        statusLabel: stale ? 'Stale' : days < 3 ? 'Active' : `${days}d ago`,
-        rawData: r,
+  // GitHub repos → buildings
+  const buildings = useMemo(() => {
+    if (!data?.github) return [];
+    return (data.github || [])
+      .slice(0, BUILDING_PLOTS.length)
+      .map((repo, i) => {
+        const [gx, gy] = BUILDING_PLOTS[i];
+        const days   = staleDays(repo.lastCommit);
+        const floors = floorsFromDays(days);
+        const active = days < 14;
+        return {
+          id:          repo.name || `repo-${i}`,
+          gx, gy,
+          floors,
+          active,
+          label:       repo.name || 'repo',
+          // extra fields passed through for NodeDetail
+          rawData:     repo,
+          nodeType:    'repo',
+          statusLabel: `GitHub repo · ${days < 1 ? 'committed today' : days === 1 ? 'committed yesterday' : `last commit ${days}d ago`}`,
+          glowColor:   active ? '#44DDBB' : '#8899AA',
+        };
       });
-    });
-
-    // Collab emails — right arc (opportunities)
-    collabs.forEach((em, i) => {
-      const angle = 0.1 + (i / Math.max(collabs.length - 1, 1)) * (Math.PI * 0.55);
-      const imp   = em.isUnread ? 0.82 : 0.45;
-      ns.push({
-        id: `collab-${i}`, type: 'collab', shape: 'diamond',
-        label: subjectWords(em.subject, 4),
-        size: em.isUnread ? 10 : 7,
-        angle, dist: 295 + i * 28, phase: i * 0.9,
-        importance: imp,
-        statusLabel: em.isUnread ? 'Unread' : null,
-        rawData: em,
-      });
-    });
-
-    // Notion ideas — lower arc (the idea bank)
-    ideas.forEach((n, i) => {
-      const angle = Math.PI * 0.35 + (i / Math.max(ideas.length - 1, 1)) * (Math.PI * 0.55);
-      const imp   = Math.max(0.4, 0.7 - i * 0.06);
-      ns.push({
-        id: `idea-${i}`, type: 'idea',
-        label: n.title,
-        size: 7,
-        angle, dist: 315 + i * 22, phase: i * 1.1,
-        importance: imp,
-        statusLabel: 'Notion',
-        rawData: n,
-      });
-    });
-
-    // Calendar events — upper-right (sessions, demos, meetings)
-    events.forEach((ev, i) => {
-      const angle = -Math.PI * 0.2 + (i - events.length / 2) * 0.28;
-      const imp   = Math.max(0.38, 0.75 - i * 0.07);
-      ns.push({
-        id: `ev-${i}`, type: 'event',
-        label: `${ev.title.split(/\s+/).slice(0, 3).join(' ')} · ${dayHint(ev.startRaw)}`,
-        size: 7,
-        angle, dist: 330 + i * 24, phase: i * 1.3,
-        importance: imp,
-        rawData: ev,
-      });
-    });
-
-    return ns;
   }, [data]);
 
-  const { scores: aiScores, labels: aiLabels } = useNodeScores(baseNodes, data?.user?.archetype);
+  // Email contacts → pedestrians (speed ∝ recency)
+  const pedestrians = useMemo(() => {
+    if (!data?.emails) return [];
+    const emailMap = {};
+    (data.emails || []).forEach(em => {
+      const key = em.fromEmail || em.from;
+      if (!key || key.toLowerCase().includes('noreply')) return;
+      if (!emailMap[key]) emailMap[key] = { name: em.from, date: em.date, rawData: em };
+      else if (em.date > emailMap[key].date) emailMap[key].date = em.date;
+    });
+    return Object.values(emailMap)
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .map((c, i) => {
+        const days  = staleDays(c.date);
+        const speed = days < 3 ? 0.006 : days < 10 ? 0.004 : 0.002;
+        return {
+          id:          `ped-${i}`,
+          label:       firstName(c.name),
+          speed,
+          rawData:     c.rawData,
+          nodeType:    'other',
+          statusLabel: `Email contact · ${days < 1 ? 'today' : days === 1 ? 'yesterday' : `${days}d ago`}`,
+        };
+      });
+  }, [data]);
 
-  const { nodes, edges } = useMemo(() => {
-    const hasAi = Object.keys(aiScores).length > 0;
-    const ns = baseNodes
-      .map(n => ({
-        ...n,
-        ...(aiScores[n.id] != null ? { importance: aiScores[n.id] } : {}),
-        ...(aiLabels[n.id]         ? { label:      aiLabels[n.id]  } : {}),
-      }))
-      .filter(n => n.type === 'center' || !hasAi || (n.importance ?? 0) >= 0.35);
-    const es = ns.slice(1).map((n, i) => ({
-      source: 0, target: i + 1,
-      strong: n.type === 'project' || n.type === 'collab',
-      rest: Math.round(300 - (n.importance ?? 0.3) * 190),
-      k: 0.007,
-    }));
-    return { nodes: ns, edges: es };
-  }, [baseNodes, aiScores]);
+  // Calendar events → cars (urgency → color + speed)
+  const cars = useMemo(() => {
+    if (!data?.calendar) return [];
+    return (data.calendar || []).map((ev, i) => {
+      const d     = Math.floor((new Date(ev.startRaw || ev.start) - Date.now()) / 86400000);
+      const color = d <= 0 ? CAR_COLORS.today
+                  : d <= 1 ? CAR_COLORS.tomorrow
+                  : d <= 3 ? CAR_COLORS.week
+                  : d <= 7 ? CAR_COLORS.soon
+                  : CAR_COLORS.far;
+      const speed = d <= 0 ? 0.042 : d <= 2 ? 0.028 : d <= 7 ? 0.018 : 0.012;
+      return {
+        id:          `car-${i}`,
+        label:       (ev.title || '').split(/\s+/).slice(0, 4).join(' '),
+        color,
+        speed,
+        rawData:     ev,
+        nodeType:    'event',
+        statusLabel: `Calendar event · ${d <= 0 ? 'today' : d === 1 ? 'tomorrow' : `in ${d} days`}`,
+      };
+    });
+  }, [data]);
+
+  function handleEntityClick(entity) {
+    if (!entity) { setSelected(null); return; }
+    setSelected({
+      ...entity,
+      type:   entity.nodeType || 'other',
+      accent: entity.glowColor || entity.color || '#FFD700',
+    });
+  }
+
+  if (loading) return <Loading />;
 
   return (
     <>
-      <BoardShell themeKey="tendril" data={data} loading={loading} onInboxEmailClick={setDraftEmail}>
-        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-          <ForceGraph nodes={nodes} edges={edges} theme={THEME} onNodeClick={setSelected} />
-          <NodeDetail node={selected} accent="#059669" onClose={() => setSelected(null)} onDraftReply={setDraftEmail} />
-        </div>
-      </BoardShell>
-      {draftEmail && <DraftCompose email={draftEmail} accent="#059669" onClose={() => setDraftEmail(null)} />}
+      <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', background: '#0C1018' }}>
+        <CityCanvas
+          buildings={buildings}
+          pedestrians={pedestrians}
+          cars={cars}
+          onEntityClick={handleEntityClick}
+        />
+        <NodeDetail
+          node={selected}
+          accent={selected?.accent || '#FFD700'}
+          onClose={() => setSelected(null)}
+          onDraftReply={setDraftEmail}
+        />
+      </div>
+      {draftEmail && (
+        <DraftCompose email={draftEmail} accent="#FFD700" onClose={() => setDraftEmail(null)} />
+      )}
     </>
   );
 }
 
 function Loading() {
   return (
-    <div style={{ width: '100vw', height: '100vh', background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'DM Sans',system-ui,sans-serif" }}>
+    <div style={{ width: '100vw', height: '100vh', background: '#0C1018', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'DM Mono','Courier New',monospace" }}>
       <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: 9, letterSpacing: '2.5px', textTransform: 'uppercase', color: 'rgba(5,150,105,0.45)', marginBottom: 10 }}>breeze</div>
-        <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.28)', fontWeight: 300, letterSpacing: '0.3px' }}>Loading your context…</div>
+        <div style={{ fontSize: 9, letterSpacing: '3px', textTransform: 'uppercase', color: 'rgba(255,200,100,0.35)', marginBottom: 10 }}>juno</div>
+        <div style={{ fontSize: 11, color: 'rgba(255,180,80,0.28)', letterSpacing: '1px' }}>loading city…</div>
       </div>
     </div>
   );

@@ -34,7 +34,7 @@ const BG_TINT = {
   root:     'rgba(239,246,255,0.8)',
   firefly:  'rgba(255,251,235,0.8)',
   current:  'rgba(255,245,245,0.8)',
-  moss:     'rgba(240,253,250,0.8)',
+  moss:     'rgba(6,6,14,0.85)',
   seedling: 'rgba(250,248,255,0.8)',
 };
 
@@ -337,7 +337,7 @@ export default function BoardShell({ children, data, themeKey, onInboxEmailClick
               fontSize: 9, fontWeight: 500, letterSpacing: '2.5px',
               textTransform: 'uppercase', color: 'rgba(0,0,0,0.28)', marginBottom: 14,
             }}>
-              Breeze AI
+              Juno AI
             </div>
             <p style={{
               fontFamily:    SERIF,
@@ -349,7 +349,7 @@ export default function BoardShell({ children, data, themeKey, onInboxEmailClick
               lineHeight:    1.2,
               letterSpacing: '-0.3px',
             }}>
-              What Breeze sees.
+              What Juno sees.
             </p>
           </div>
 
@@ -393,7 +393,7 @@ export default function BoardShell({ children, data, themeKey, onInboxEmailClick
             textTransform: 'uppercase', color: 'rgba(0,0,0,0.14)',
             userSelect: 'none',
           }}>
-            breeze
+            juno
           </div>
         </div>
       </div>
