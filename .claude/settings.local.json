@@ -28,7 +28,18 @@
       "Bash(npx --no-install tsc --noEmit --strict false)",
       "Bash(wc *)",
       "Bash(npx --no tsc --noEmit --jsx react --target esnext --moduleResolution bundler src/components/boards/RootBoard.jsx)",
-      "Bash(xxd \"C:/Users/user/juno/src/color scheme\")"
+      "Bash(xxd \"C:/Users/user/juno/src/color scheme\")",
+      "Bash(taskkill /PID 10484 /F)",
+      "Bash(taskkill /PID 8640 /F)",
+      "Bash(cmd *)",
+      "Bash(ls *)",
+      "Bash(python3 *)",
+      "Bash(pip show *)",
+      "Bash(pip install *)",
+      "Bash(pip3 install *)",
+      "Bash(npm ls *)",
+      "Bash(tail -n +2 /c/Users/user/juno/ronnie_github.json)",
+      "Bash(tail -n +5 /tmp/ronnie_data.json)"
     ]
   }
 }

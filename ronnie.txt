@@ -1,0 +1,258 @@
+
+============================================================
+RONNIE CHEUNG — PERSONAL DATA EXPORT
+============================================================
+
+Generated: 2026-04-17T05:12:45.876Z
+Source: Composio connected accounts
+
+============================================================
+LINKEDIN PROFILE
+============================================================
+
+{
+  "response_dict": {
+    "author_id": "urn:li:person:Np1AECrhyl",
+    "email": "ronneycheunglc@gmail.com",
+    "email_verified": true,
+    "family_name": "Cheung",
+    "given_name": "Ronnie",
+    "locale": {
+      "country": "US",
+      "language": "en"
+    },
+    "name": "Ronnie Cheung",
+    "picture": "https://media.licdn.com/dms/image/v2/D5603AQFapPnIEqeyKw/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1670332367636?e=1778112000&v=beta&t=WWVbHymJD6h-6VCgZMSV6cds_dWzfhflFWVDgK97WQw",
+    "sub": "Np1AECrhyl"
+  }
+}
+
+============================================================
+GITHUB
+============================================================
+
+Username: ronniecheunglc
+Name: N/A
+Email: N/A
+Bio: N/A
+Followers: 0  Following: 0
+Public repos: 1
+Account created: 2025-10-18T19:37:09Z
+
+REPOSITORIES (2):
+  ronniecheunglc/breeze [JavaScript] stars:0 updated:2026-04-06
+  ronniecheunglc/gramo [HTML] stars:0 updated:2025-10-18
+
+============================================================
+DISCORD
+============================================================
+
+Username: ronniecheunglc
+ID: 445739049676963853
+Email: ronneycheunglc@gmail.com
+
+SERVERS (0):
+
+============================================================
+YOUTUBE
+============================================================
+
+SUBSCRIPTIONS (0):
+
+PLAYLISTS (0):
+
+============================================================
+INSTAGRAM
+============================================================
+
+Username: ronniecheunglc
+Name: N/A
+Followers: 1360
+Following: 1056
+Posts: 1
+Bio: usc
+Website: N/A
+
+RECENT POSTS (1):
+  [CAROUSEL_ALBUM] Winter sophomore 15 🎅 | likes:236 | 2025-12-31
+
+============================================================
+NOTION
+============================================================
+
+Workspace: Ronnie Cheung's Notion
+Pages (0):
+
+============================================================
+GOOGLE CALENDAR
+============================================================
+
+CALENDARS:
+
+EVENTS FROM 2025 (22):
+  2024-02-20 -> 2024-02-21  Happy birthday!
+  2023-01-01 -> 2023-01-02  Kemi's birthday
+  2025-03-03T08:00 -> 2025-03-03T09:00  Discussion
+     ________________________________________________________________________________ Microsoft Teams Need help?<https://aka
+    Attendees: ang@qti.qualcomm.com, ronneycheunglc@gmail.com
+  2025-03-12 -> 2025-03-18  Stay at D8 Hotel
+    To see detailed information for automatically created events like this one, use the official Google Calendar app. https:
+    Attendees: ronneycheunglc@gmail.com
+  2025-03-14T21:30 -> 2025-03-14T22:30  Reservation at BESTIA
+    To see detailed information for automatically created events like this one, use the official Google Calendar app. https:
+    Attendees: ronneycheunglc@gmail.com
+  2025-03-14T21:30 -> 2025-03-14T22:30  Reservation at Bestia
+    To see detailed information for automatically created events like this one, use the official Google Calendar app. https:
+    Attendees: ronneycheunglc@gmail.com
+  2025-03-17T02:30 -> 2025-03-17T03:30  Thai mix oil body massage
+    To see detailed information for automatically created events like this one, use the official Google Calendar app. https:
+    Attendees: ronneycheunglc@gmail.com
+  2025-03-17T02:30 -> 2025-03-17T03:30  Traditional thai massage
+    To see detailed information for automatically created events like this one, use the official Google Calendar app. https:
+    Attendees: ronneycheunglc@gmail.com
+  2025-03-17T17:40 -> 2025-03-17T18:40  Appointment
+    To see detailed information for automatically created events like this one, use the official Google Calendar app. https:
+    Attendees: ronneycheunglc@gmail.com
+  2025-03-22T03:30 -> 2025-03-22T05:30  Bus to Prague (Central Bus Station Florenc)
+    To see detailed information for automatically created events like this one, use the official Google Calendar app. https:
+    Attendees: ronneycheunglc@gmail.com
+  2025-03-23T03:05 -> 2025-03-23T05:55  Bus to Prague (Central Bus Station Florenc)
+    To see detailed information for automatically created events like this one, use the official Google Calendar app. https:
+    Attendees: ronneycheunglc@gmail.com
+  2025-03-23T13:00 -> 2025-03-23T14:35  Flight to Amsterdam (KL 1350)
+    To see detailed information for automatically created events like this one, use the official Google Calendar app. https:
+    Attendees: ronneycheunglc@gmail.com
+  2025-03-23T16:40 -> 2025-03-24T03:45  Flight to Los Angeles (KL 601)
+    To see detailed information for automatically created events like this one, use the official Google Calendar app. https:
+    Attendees: ronneycheunglc@gmail.com
+  2025-03-22T15:00 -> 2025-03-22T18:05  Bus to Český Krumlov (Špičák)
+    To see detailed information for automatically created events like this one, use the official Google Calendar app. https:
+    Attendees: ronneycheunglc@gmail.com
+  2025-05-01T03:30 -> 2025-05-01T04:00  Automus AI Intern Interview - Ronnie Cheung
+     ________________________________________________________________________________ Microsoft Teams Need help?<https://aka
+    Attendees: ronneycheunglc@gmail.com, ronniec@usc.edu, glenn.kauffman@automus.com, kayla.waibel@automus.com
+  2025-04-15T10:00 -> 2025-04-15T10:05  Ronnie - DIAGNOSTIC 1
+  2025-01-07T09:30 -> 2025-01-07T09:35  Kitty Cheung - ultrasound appointment
+  2025-03-07T09:30 -> 2025-03-07T09:35  shrute - Plan 2
+  2025-11-14T12:45 -> 2025-11-14T13:45  Reservation at Bestia
+    To see detailed information for automatically created events like this one, use the official Google Calendar app. https:
+    Attendees: ronneycheunglc@gmail.com
+  2025-11-18T12:00 -> 2025-11-18T13:00  Reservation at Bestia
+    To see detailed information for automatically created events like this one, use the official Google Calendar app. https:
+    Attendees: ronneycheunglc@gmail.com
+  2026-01-21T00:30 -> 2026-01-21T12:55  Flight to Los Angeles (CX 880)
+    To see detailed information for automatically created events like this one, use the official Google Calendar app. https:
+    Attendees: ronneycheunglc@gmail.com
+  2026-03-07T08:00 -> 2026-03-07T08:45  google meet with Ronnie
+    Attendees: ronneycheunglc@gmail.com, dlibarra@isf.edu.hk
+
+============================================================
+GMAIL CONTACTS
+============================================================
+
+CONTACTS (49):
+  James Castley
+  Liam Hurley
+  Alex
+  Vanessa
+  Dabria Chu
+  Sophie Law
+  Samuel Arosti
+  Danielle Lin
+  Anderson Liew
+  James Ng
+  Ryan Li
+  Hayley Leung
+  Heidi Leung
+  Louisa Tung
+  Sky Cheung
+  Evan Mcgillivray
+  Mateo (KCC)
+  Ayush
+  Sophie Lecoudic
+  Thomas Leung
+  Cyrus Wong
+  Hugh Tung
+  Ashlynn Lo
+  George Wyatt
+  Martin Chan
+  Toby Strandlund
+  Ronnie Cheung
+  Ryan Bennet
+  Andre Wong
+  William Singline
+  Harry
+  Eren Cheung
+  Kemi
+  Henry Lee
+  Dylan Bettle <dylan.bettle@icloud.com>
+  PG
+  Kenneth Cheung
+  Gilles
+  Ho Sir (A Math)
+  Lucius Ng
+  Nigel Ho
+  Marco Ching
+  Gregory Li
+  Ethan Ng
+  Richard Liu
+  Anthony Ng
+  Trinity Fung
+  Aidan
+  Lok Chan
+
+============================================================
+GOOGLE DRIVE
+============================================================
+
+FILES (50):
+  [vnd.openxmlformats-officedocument.wordprocessingml.document] Paper 2 歷年考題匯總 （2013-2025）.docx | modified: 2026-04-04
+  [vnd.openxmlformats-officedocument.spreadsheetml.sheet] Comet Activator Club Outreach Sheet.xlsx | modified: 2026-03-30
+  [document] Comet Activator Stock Pitch Competition Outreach Email Copy | modified: 2026-03-24
+  [vnd.openxmlformats-officedocument.presentationml.presentation] ai moats.pptx | modified: 2026-03-11
+  [document] Week 2 Pitch | modified: 2026-03-10
+  [script] outreacher | modified: 2026-03-09
+  [document] Cheung Long Ching Personal Statement | modified: 2026-03-06
+  [document] Workflow Mirror: Learn How Your Best People Actually Work | modified: 2026-03-03
+  [document] Icarus — Personal Insight Engine: The Problem | modified: 2026-03-02
+  [json] s08_midterm_practice_exam_interactive.ipynb | modified: 2026-03-02
+  [spreadsheet] Team Progress | modified: 2026-02-26
+  [document] TroyLabs Sponsorship Packet Explanation | modified: 2026-02-23
+  [pdf] Wolk Joshua (2026).pdf | modified: 2026-02-13
+  [presentation] PM acitivity pitching | modified: 2026-02-11
+  [spreadsheet] S26 Lavalab Second Round PM Interview Sign-Ups | modified: 2026-01-28
+  [presentation] 20260126 sky talk PPT | modified: 2026-01-26
+  [document] JT class notes | modified: 2026-01-22
+  [spreadsheet] 大時代 | modified: 2026-01-22
+  [presentation] Parking Ad | modified: 2026-01-04
+  [shortcut] Audio of the hike | modified: 2025-12-20
+  [x-m4a] New Recording 37.m4a | modified: 2025-12-20
+  [quicktime] IMG_4477.MOV | modified: 2025-12-20
+  [quicktime] IMG_4450.MOV | modified: 2025-12-20
+  [quicktime] IMG_4453.MOV | modified: 2025-12-20
+  [quicktime] IMG_4478.MOV | modified: 2025-12-20
+  [quicktime] IMG_4452.MOV | modified: 2025-12-20
+  [quicktime] IMG_4480.MOV | modified: 2025-12-20
+  [folder] HIKE 2025 | modified: 2025-12-20
+  [quicktime] IMG_4488.MOV | modified: 2025-12-20
+  [quicktime] IMG_4493.MOV | modified: 2025-12-20
+  [quicktime] IMG_4509.MOV | modified: 2025-12-20
+  [jpeg] IMG_4462.JPG | modified: 2025-12-20
+  [jpeg] IMG_4463.JPG | modified: 2025-12-20
+  [jpeg] IMG_4458.JPG | modified: 2025-12-20
+  [jpeg] IMG_4461.JPG | modified: 2025-12-20
+  [jpeg] IMG_4459.JPG | modified: 2025-12-20
+  [jpeg] IMG_4457.JPG | modified: 2025-12-20
+  [heif] IMG_4508.HEIC | modified: 2025-12-20
+  [jpeg] IMG_4460.JPG | modified: 2025-12-20
+  [heif] IMG_4484.HEIC | modified: 2025-12-20
+  [jpeg] IMG_4454.JPG | modified: 2025-12-20
+  [jpeg] IMG_4469.JPG | modified: 2025-12-20
+  [jpeg] IMG_4464.JPG | modified: 2025-12-20
+  [jpeg] IMG_4470.JPG | modified: 2025-12-20
+  [jpeg] IMG_4455.JPG | modified: 2025-12-20
+  [jpeg] IMG_4467.JPG | modified: 2025-12-20
+  [jpeg] IMG_4465.JPG | modified: 2025-12-20
+  [jpeg] IMG_4468.JPG | modified: 2025-12-20
+  [jpeg] IMG_4456.JPG | modified: 2025-12-20
+  [jpeg] IMG_4476.JPG | modified: 2025-12-20

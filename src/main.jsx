@@ -8,6 +8,8 @@ import Login                from './pages/Login.jsx';
 import ResetPassword        from './pages/ResetPassword.jsx';
 import ResetPasswordConfirm from './pages/ResetPasswordConfirm.jsx';
 import Canvas               from './pages/Canvas.jsx';
+import Room                 from './pages/Room.jsx';
+import CuteRoom             from './pages/CuteRoom.jsx';
 import Vault                from './pages/Vault.jsx';
 import Home                 from './pages/Home.jsx';
 import ConnectApps          from './pages/ConnectApps.jsx';
@@ -28,6 +30,8 @@ createRoot(document.getElementById('root')).render(
         <Route path="/login"          element={<Login />} />
         <Route path="/board"          element={<Board />} />
         <Route path="/canvas"          element={<Canvas />} />
+        <Route path="/room"            element={<Room />} />
+        <Route path="/cute-room"       element={<CuteRoom />} />
         <Route path="/vault"           element={<Vault />} />
         <Route path="/home"            element={<Home />} />
         <Route path="/apps"            element={<ConnectApps />} />
